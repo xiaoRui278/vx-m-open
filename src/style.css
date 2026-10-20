@@ -460,19 +460,6 @@ button:disabled { cursor: not-allowed; }
 .btn.sm { height: 27px; padding: 0 10px; font-size: 12px; }
 :root[data-platform="windows"] .btn.sm { height: 28px; padding: 0 11px; font-size: 12.5px; }
 
-.btn.ghost { border-color: transparent; background: transparent; color: var(--text-2); }
-
-.btn.ghost:hover:not(:disabled) {
-  background: var(--surface-2);
-  border-color: transparent;
-  color: var(--text);
-}
-
-:root[data-platform="windows"] .btn.ghost:hover:not(:disabled) {
-  background: var(--caption-hover);
-  color: var(--text);
-}
-
 .btn.danger { color: var(--err); }
 
 .btn.danger:hover:not(:disabled) {
@@ -494,7 +481,10 @@ button:disabled { cursor: not-allowed; }
   color: #fff;
 }
 
-.btn svg { width: 13px; height: 13px; }
+.btn svg { width: 13px; height: 13px; display: block; }
+
+/* 图标 span 由 v-html 注入，转 flex 消除 svg 基线缝隙，保证图标与文字居中 */
+.btn > span[aria-hidden] { display: inline-flex; align-items: center; }
 
 /* ============ 环境检测条 ============ */
 /* macOS：平铺头部行，不套卡片（系统设置式）；Windows：Fluent 信息条 */
@@ -578,23 +568,17 @@ button:disabled { cursor: not-allowed; }
   margin: 0 0 10px;
 }
 
-/* 平面卡片：无边框无阴影，surface 与 bg 的明度差即边界（macOS 母语） */
+/* 平面卡片：无阴影，发丝边框 + surface 明度差共同界定（两平台统一） */
 .instance {
   display: flex;
   align-items: center;
   gap: 14px;
   background: var(--surface);
-  border: none;
+  border: 1px solid var(--border);
   border-radius: var(--radius-card);
   padding: 14px 16px;
   margin-bottom: 10px;
   flex-wrap: wrap;
-}
-
-/* Fluent：保留发丝描边（Windows 母语） */
-:root[data-platform="windows"] .instance {
-  border: 1px solid var(--border);
-  background: var(--surface);
 }
 
 /* 卡片级状态着色：平涂 tint + 名称行圆点（色 + 形双通道），无色条无渐变 */
@@ -885,17 +869,13 @@ button:disabled { cursor: not-allowed; }
 }
 
 /* ============ 设置页 ============ */
-/* macOS：平面分组卡（无边框）；Windows：Fluent 描边卡 */
+/* 分组卡：发丝边框界定（与实例卡一致） */
 .settings-group {
   background: var(--surface);
-  border: none;
+  border: 1px solid var(--border);
   border-radius: var(--radius-card);
   padding: 4px 16px;
   margin-bottom: 16px;
-}
-
-:root[data-platform="windows"] .settings-group {
-  border: 1px solid var(--border);
 }
 
 .setting-row {

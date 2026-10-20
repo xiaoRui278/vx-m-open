@@ -372,15 +372,15 @@ const anyDialogOpen = computed(
               <button v-if="x.outdated" class="btn sm" :disabled="store.busy || anyDialogOpen" @click="openConfirm('rebuild', x)">
                 <span aria-hidden="true" v-html="icons.refresh"></span>{{ t("rebuild") }}
               </button>
-              <button class="btn ghost sm" :disabled="store.busy || anyDialogOpen" @click="openRename(x)">
+              <button class="btn sm" :disabled="store.busy || anyDialogOpen" @click="openRename(x)">
                 <span aria-hidden="true" v-html="icons.pencil"></span>{{ t("rename") }}
               </button>
-              <button class="btn ghost danger sm" :disabled="store.busy || anyDialogOpen" @click="openConfirm('delete', x)">
+              <button class="btn danger sm" :disabled="store.busy || anyDialogOpen" @click="openConfirm('delete', x)">
                 <span aria-hidden="true" v-html="icons.trash"></span>{{ t("remove") }}
               </button>
             </template>
             <template v-else>
-              <button class="btn ghost sm" :disabled="store.busy || anyDialogOpen" @click="openRename(x)">
+              <button class="btn sm" :disabled="store.busy || anyDialogOpen" @click="openRename(x)">
                 <span aria-hidden="true" v-html="icons.pencil"></span>{{ t("remark") }}
               </button>
             </template>
@@ -420,7 +420,7 @@ const anyDialogOpen = computed(
             <span v-else aria-hidden="true" v-html="icons.play"></span>
             {{ store.busy ? t("launching") : t("launchNew") }}
           </button>
-          <button class="btn ghost sm" :disabled="store.busy || anyDialogOpen" @click="openRename(mainTarget)">
+          <button class="btn sm" :disabled="store.busy || anyDialogOpen" @click="openRename(mainTarget)">
             <span aria-hidden="true" v-html="icons.pencil"></span>{{ t("remark") }}
           </button>
         </div>
