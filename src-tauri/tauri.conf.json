@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "vx-m-open",
+        "title": "VXMOpen",
         "width": 920,
         "height": 660,
         "minWidth": 780,

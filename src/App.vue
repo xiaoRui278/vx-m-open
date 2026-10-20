@@ -46,7 +46,7 @@ const platformFoot = computed(
   <div v-if="isWindows" class="titlebar" data-tauri-drag-region>
     <div class="titlebar-app" data-tauri-drag-region>
       <img class="brand-mark" :src="logo" alt="">
-      vx-m-open
+      VXMOpen
     </div>
     <div class="titlebar-spacer" data-tauri-drag-region></div>
     <div class="caption-group">
@@ -61,7 +61,7 @@ const platformFoot = computed(
     <aside class="sidebar">
       <div class="brand">
         <img class="brand-mark" :src="logo" alt="">
-        <span class="brand-name">vx-m-open</span>
+        <span class="brand-name">VXMOpen</span>
       </div>
       <nav class="nav" :aria-label="t('navInstances')">
         <button

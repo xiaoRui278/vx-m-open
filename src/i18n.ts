@@ -148,7 +148,7 @@ const messages = {
     checkFailed: "检查失败（网络不可用）",
 
     // 更新横幅
-    updateBanner: "vx-m-open v{version} 已发布，前往下载页获取新版本",
+    updateBanner: "VXMOpen v{version} 已发布，前往下载页获取新版本",
 
     // Toast / 状态
     launchOk: "已发起启动，窗口即将弹出",
@@ -278,7 +278,7 @@ const messages = {
     checking: "Checking…",
     checkFailed: "Check failed (network unavailable)",
 
-    updateBanner: "vx-m-open v{version} is available — visit the release page to download",
+    updateBanner: "VXMOpen v{version} is available — visit the release page to download",
 
     launchOk: "Launch started, window will pop up shortly",
     closed: "Instance {pid} closed",
