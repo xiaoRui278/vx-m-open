@@ -1,16 +1,19 @@
 /* ============================================================
-   vx-m-open — 按 UI 重设计稿实现
+   vx-m-open — VXMOpen 设计系统（见 design.md）
+   Hallmark · genre: utilitarian · macrostructure: workbench-app
+   design-system: design.md · designed-as-app
    令牌：data-theme="light|dark"（由前端按设置解析，含跟随系统）
    平台：data-platform="macos|windows"（Windows 走 Fluent 令牌与控件）
+   纪律：色值只出现在令牌块；组件一律 var() 引用
    ============================================================ */
 
 /* ============ 设计令牌（macOS 浅色为基准） ============ */
 :root {
-  --bg: #eef0f2;
-  --surface: #ffffff;
-  --surface-2: #f5f6f8;
-  --border: #e2e5e9;
-  --border-strong: #d2d6dc;
+  --bg: #eef0f4;
+  --surface: #fcfcfe;
+  --surface-2: #f3f5f9;
+  --border: #e1e5ee;
+  --border-strong: #ccd2de;
   --text: #1b1e22;
   --text-2: #5c626c;
   --text-3: #6f7680;
@@ -25,22 +28,31 @@
   --err: #d3382e;
   --err-hover: #b92c24;
   --err-weak: rgba(211, 56, 46, 0.10);
-  --radius: 10px;
-  --radius-lg: 14px;
-  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --overlay: rgba(18, 22, 30, 0.44);
+  --toast-bg: #23262e;
+  --toast-fg: #f5f6fa;
+  --toast-ok: #0c7a52;
+  --radius-ctl: 8px;
+  --radius-card: 12px;
+  --radius-chip: 4px;
+  --radius-full: 999px;
+  --shadow-card: none;
   --shadow-float: 0 16px 48px rgba(16, 24, 40, 0.22);
   --ring: 0 0 0 3px rgba(43, 98, 217, 0.25);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast: 160ms;
+  --dur: 220ms;
   --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC",
     "Microsoft YaHei", sans-serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
 }
 
 :root[data-theme="dark"] {
-  --bg: #141517;
-  --surface: #1e2023;
-  --surface-2: #26282c;
-  --border: #2f3237;
-  --border-strong: #3c4046;
+  --bg: #131519;
+  --surface: #1d2026;
+  --surface-2: #262a31;
+  --border: #2e333c;
+  --border-strong: #3e4450;
   --text: #e8eaed;
   --text-2: #a2a8b0;
   --text-3: #8a919b;
@@ -54,6 +66,10 @@
   --err: #ef6a60;
   --err-hover: #f4837b;
   --err-weak: rgba(239, 106, 96, 0.14);
+  --overlay: rgba(4, 6, 10, 0.52);
+  --toast-bg: #2b2f37;
+  --toast-fg: #eceef4;
+  --toast-ok: #12805a;
   --shadow-card: none;
   --shadow-float: 0 16px 48px rgba(0, 0, 0, 0.55);
   --ring: 0 0 0 3px rgba(93, 141, 240, 0.40);
@@ -61,16 +77,16 @@
 
 /* ---- Windows Fluent 令牌 ---- */
 :root[data-platform="windows"] {
-  --bg: #f3f3f3;
-  --surface: #ffffff;
-  --surface-2: #f9f9f9;
-  --layer: rgba(255, 255, 255, 0.7);
-  --border: #e5e5e5;
-  --border-strong: #d6d6d6;
-  --ctrl: #fdfdfd;
-  --text: #1a1a1a;
-  --text-2: #5d5d5d;
-  --text-3: #757575;
+  --bg: #f2f3f7;
+  --surface: #fbfbfd;
+  --surface-2: #f5f6fa;
+  --layer: rgba(252, 253, 255, 0.7);
+  --border: #e2e5ec;
+  --border-strong: #d0d5df;
+  --ctrl: #fcfcfe;
+  --text: #1a1c20;
+  --text-2: #5c5f66;
+  --text-3: #73767d;
   --accent: #2b62d9;
   --accent-hover: #3a70e2;
   --accent-text: #1e4db8;
@@ -81,10 +97,13 @@
   --err: #c42b1c;
   --err-hover: #d13438;
   --err-weak: rgba(196, 43, 28, 0.10);
+  --overlay: rgba(14, 16, 22, 0.42);
+  --radius-ctl: 4px;
+  --radius-card: 8px;
+  --radius-chip: 4px;
+  --radius-full: 999px;
   --caption-hover: rgba(0, 0, 0, 0.06);
-  --radius: 8px;
-  --radius-lg: 8px;
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-card: none;
   --ring: 0 0 0 2px var(--bg), 0 0 0 4px rgba(43, 98, 217, 0.8);
   --font: "Segoe UI Variable Text", "Segoe UI", system-ui, "Microsoft YaHei UI",
     "PingFang SC", sans-serif;
@@ -92,16 +111,16 @@
 }
 
 :root[data-platform="windows"][data-theme="dark"] {
-  --bg: #202020;
-  --surface: #2b2b2b;
-  --surface-2: #323232;
-  --layer: rgba(43, 43, 43, 0.7);
-  --border: #3d3d3d;
-  --border-strong: #4a4a4a;
-  --ctrl: #333333;
-  --text: #ffffff;
-  --text-2: #c9c9c9;
-  --text-3: #a4a4a4;
+  --bg: #1f2126;
+  --surface: #2a2d33;
+  --surface-2: #31353c;
+  --layer: rgba(42, 45, 51, 0.7);
+  --border: #3c4048;
+  --border-strong: #4a4f58;
+  --ctrl: #34383e;
+  --text: #f2f3f5;
+  --text-2: #c5c8ce;
+  --text-3: #9ba0a9;
   --accent: #4d82f0;
   --accent-hover: #6394f3;
   --accent-text: #6ea2f5;
@@ -112,6 +131,7 @@
   --err: #ff8a7a;
   --err-hover: #ff9d90;
   --err-weak: rgba(255, 138, 122, 0.14);
+  --overlay: rgba(0, 0, 0, 0.5);
   --caption-hover: rgba(255, 255, 255, 0.08);
   --shadow-card: none;
   --shadow-float: 0 16px 48px rgba(0, 0, 0, 0.55);
@@ -145,7 +165,6 @@ button:disabled { cursor: not-allowed; }
 :focus-visible {
   outline: none;
   box-shadow: var(--ring);
-  border-radius: 6px;
 }
 
 ::selection { user-select: text; }
@@ -176,7 +195,7 @@ button:disabled { cursor: not-allowed; }
   color: var(--text-2);
 }
 
-.titlebar-app .brand-mark { width: 18px; height: 18px; border-radius: 4px; }
+.titlebar-app .brand-mark { width: 18px; height: 18px; border-radius: var(--radius-chip); }
 
 .titlebar-spacer { flex: 1; height: 100%; }
 
@@ -258,19 +277,19 @@ button:disabled { cursor: not-allowed; }
   gap: 9px;
   padding: 8px 10px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-ctl);
   background: transparent;
   color: var(--text-2);
   font-size: 13.5px;
   text-align: left;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 }
 
 :root[data-platform="windows"] .nav-item {
   height: 36px;
   padding: 0 12px;
   gap: 11px;
-  border-radius: 4px;
+  border-radius: var(--radius-ctl);
   color: var(--text);
 }
 
@@ -292,7 +311,6 @@ button:disabled { cursor: not-allowed; }
 :root[data-platform="windows"] .nav-item.active {
   background: var(--surface);
   color: var(--text);
-  box-shadow: var(--shadow-card);
 }
 
 /* Fluent 左侧 3px 活动指示条 */
@@ -303,7 +321,7 @@ button:disabled { cursor: not-allowed; }
   top: 50%;
   width: 3px;
   height: 16px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--accent);
   transform: translateY(-50%);
 }
@@ -348,10 +366,11 @@ button:disabled { cursor: not-allowed; }
   gap: 10px;
   margin: 12px 24px 0;
   padding: 9px 14px;
-  border-radius: var(--radius);
+  border-radius: var(--radius-ctl);
   background: var(--accent-weak);
   color: var(--accent-text);
   font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
 }
 
 .update-strip svg { width: 15px; height: 15px; flex: none; }
@@ -365,10 +384,10 @@ button:disabled { cursor: not-allowed; }
   display: grid;
   place-items: center;
   padding: 3px;
-  border-radius: 6px;
+  border-radius: var(--radius-chip);
 }
 
-.update-strip .dismiss:hover { background: rgba(0, 0, 0, 0.08); }
+.update-strip .dismiss:hover { background: var(--caption-hover); }
 .update-strip .dismiss svg { width: 12px; height: 12px; }
 
 /* ---- 按钮 ---- */
@@ -379,20 +398,20 @@ button:disabled { cursor: not-allowed; }
   gap: 5px;
   padding: 0 13px;
   height: 30px;
-  border-radius: 7px;
+  border-radius: var(--radius-ctl);
   border: 1px solid var(--border-strong);
   background: var(--surface);
   color: var(--text);
   font-size: 12.5px;
   font-weight: 500;
   white-space: nowrap;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 }
 
 :root[data-platform="windows"] .btn {
   gap: 6px;
   height: 32px;
-  border-radius: 4px;
+  border-radius: var(--radius-ctl);
   border-bottom-color: var(--border);
   background: var(--ctrl);
   font-size: 13px;
@@ -478,22 +497,28 @@ button:disabled { cursor: not-allowed; }
 .btn svg { width: 13px; height: 13px; }
 
 /* ============ 环境检测条 ============ */
+/* macOS：平铺头部行，不套卡片（系统设置式）；Windows：Fluent 信息条 */
 .env-strip {
   display: flex;
   align-items: center;
   gap: 12px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
-  padding: 13px 16px;
+  background: transparent;
+  border: none;
+  padding: 2px 0 0;
   margin-bottom: 18px;
+}
+
+:root[data-platform="windows"] .env-strip {
+  background: var(--layer);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 13px 16px;
 }
 
 .env-icon {
   width: 34px;
   height: 34px;
-  border-radius: 9px;
+  border-radius: var(--radius-ctl);
   background: var(--accent-weak);
   color: var(--accent-text);
   display: grid;
@@ -501,7 +526,7 @@ button:disabled { cursor: not-allowed; }
   flex: none;
 }
 
-:root[data-platform="windows"] .env-icon { border-radius: 6px; }
+:root[data-platform="windows"] .env-icon { border-radius: var(--radius-chip); }
 
 .env-icon svg { width: 17px; height: 17px; }
 
@@ -513,12 +538,13 @@ button:disabled { cursor: not-allowed; }
   display: inline-block;
   margin-left: 7px;
   padding: 1px 7px;
-  border-radius: 999px;
+  border-radius: var(--radius-chip);
   background: var(--accent-weak);
   color: var(--accent-text);
   font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 600;
+  font-variant-numeric: tabular-nums;
   vertical-align: 1px;
 }
 
@@ -530,8 +556,8 @@ button:disabled { cursor: not-allowed; }
   align-items: center;
   gap: 10px;
   background: var(--warn-weak);
-  border: 1px solid transparent;
-  border-radius: var(--radius);
+  border: none;
+  border-radius: var(--radius-ctl);
   padding: 9px 14px;
   margin-bottom: 14px;
   font-size: 12.5px;
@@ -548,42 +574,38 @@ button:disabled { cursor: not-allowed; }
   font-weight: 600;
   color: var(--text-3);
   letter-spacing: 0.4px;
+  font-variant-numeric: tabular-nums;
   margin: 0 0 10px;
 }
 
+/* 平面卡片：无边框无阴影，surface 与 bg 的明度差即边界（macOS 母语） */
 .instance {
   display: flex;
   align-items: center;
   gap: 14px;
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
+  border: none;
+  border-radius: var(--radius-card);
   padding: 14px 16px;
   margin-bottom: 10px;
   flex-wrap: wrap;
-  transition: border-color 0.15s ease;
 }
 
-.instance[data-state="stopped"]:hover { border-color: var(--border-strong); }
-
-/* 卡片级状态着色：状态「印」在卡片上，窗口缩放 / 内容换行时信息不丢失 */
-.instance[data-state="running"] {
-  border-color: var(--ok);
-  box-shadow: inset 4px 0 0 var(--ok), var(--shadow-card);
-  background: linear-gradient(to right, var(--ok-weak), var(--surface) 55%);
+/* Fluent：保留发丝描边（Windows 母语） */
+:root[data-platform="windows"] .instance {
+  border: 1px solid var(--border);
+  background: var(--surface);
 }
 
-.instance[data-state="outdated"] {
-  border-color: var(--warn-text);
-  box-shadow: inset 4px 0 0 var(--warn-text), var(--shadow-card);
-  background: linear-gradient(to right, var(--warn-weak), var(--surface) 55%);
-}
+/* 卡片级状态着色：平涂 tint + 名称行圆点（色 + 形双通道），无色条无渐变 */
+.instance[data-state="running"] { background: var(--ok-weak); }
+
+.instance[data-state="outdated"] { background: var(--warn-weak); }
 
 .avatar {
   width: 40px;
   height: 40px;
-  border-radius: 11px;
+  border-radius: var(--radius-ctl);
   flex: none;
   display: grid;
   place-items: center;
@@ -597,7 +619,7 @@ button:disabled { cursor: not-allowed; }
 :root[data-platform="windows"] .avatar {
   width: 42px;
   height: 42px;
-  border-radius: 8px;
+  border-radius: var(--radius-chip);
   background: var(--accent-weak);
   color: var(--accent-text);
   border-color: transparent;
@@ -611,13 +633,26 @@ button:disabled { cursor: not-allowed; }
 
 .ident-name-line { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
 
+.state-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-3);
+  opacity: 0.55;
+  flex: none;
+}
+
+.instance[data-state="running"] .state-dot { background: var(--ok); opacity: 1; }
+
+.instance[data-state="outdated"] .state-dot { background: var(--warn-text); opacity: 1; }
+
 .ident-name { font-size: 14.5px; font-weight: 650; }
 
 .tag {
   font-size: 10.5px;
   font-weight: 600;
   padding: 1.5px 7px;
-  border-radius: 999px;
+  border-radius: var(--radius-chip);
   letter-spacing: 0.3px;
 }
 
@@ -627,7 +662,7 @@ button:disabled { cursor: not-allowed; }
 
 .ident-path { margin-top: 2px; }
 
-.meta-line { margin-top: 3px; font-size: 12px; color: var(--text-3); }
+.meta-line { margin-top: 3px; font-size: 12px; color: var(--text-3); font-variant-numeric: tabular-nums; }
 
 .meta-line .sep { margin: 0 5px; opacity: 0.55; }
 
@@ -656,12 +691,11 @@ button:disabled { cursor: not-allowed; }
   gap: 14px;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  box-shadow: var(--shadow-card);
+  border-radius: var(--radius-card);
   padding: 11px 16px;
   margin-bottom: 8px;
   flex-wrap: wrap;
-  transition: border-color 0.15s ease;
+  transition: border-color var(--dur-fast) var(--ease-out);
 }
 
 .instance-row:hover { border-color: var(--border-strong); }
@@ -669,7 +703,7 @@ button:disabled { cursor: not-allowed; }
 .instance-badge {
   width: 34px;
   height: 34px;
-  border-radius: 6px;
+  border-radius: var(--radius-chip);
   flex: none;
   display: grid;
   place-items: center;
@@ -678,12 +712,13 @@ button:disabled { cursor: not-allowed; }
   font-family: var(--font-mono);
   font-size: 13px;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
   color: var(--text-2);
 }
 
 .instance-name { font-size: 13.5px; font-weight: 600; }
 
-.instance-meta { margin-top: 1px; font-size: 12px; color: var(--text-3); }
+.instance-meta { margin-top: 1px; font-size: 12px; color: var(--text-3); font-variant-numeric: tabular-nums; }
 
 .dot-sep { margin: 0 6px; opacity: 0.6; }
 
@@ -691,8 +726,8 @@ button:disabled { cursor: not-allowed; }
 
 /* ---- 空态 ---- */
 .empty {
-  border: 1.5px dashed var(--border-strong);
-  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
   padding: 44px 24px;
   text-align: center;
 }
@@ -700,12 +735,12 @@ button:disabled { cursor: not-allowed; }
 .empty-logo {
   width: 44px;
   height: 44px;
-  border-radius: 12px;
+  border-radius: var(--radius-ctl);
   display: block;
   margin: 0 auto 12px;
 }
 
-:root[data-platform="windows"] .empty-logo { border-radius: 8px; }
+:root[data-platform="windows"] .empty-logo { border-radius: var(--radius-chip); }
 
 .empty-title { font-weight: 600; font-size: 14.5px; }
 
@@ -715,29 +750,25 @@ button:disabled { cursor: not-allowed; }
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 18, 22, 0.44);
+  background: var(--overlay);
   backdrop-filter: blur(3px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 100;
-  animation: fade-in 0.16s ease-out;
+  animation: fade-in var(--dur-fast) var(--ease-out);
 }
-
-:root[data-platform="windows"] .overlay { background: rgba(0, 0, 0, 0.4); }
 
 .dialog {
   width: 420px;
   max-width: calc(100vw - 48px);
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-card);
   box-shadow: var(--shadow-float);
   padding: 20px 22px 18px;
-  animation: pop-in 0.18s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  animation: pop-in 0.18s var(--ease-out);
 }
-
-.dialog.danger-dialog { border-top: 3px solid var(--err); }
 
 .dialog-badge {
   width: 36px;
@@ -761,19 +792,19 @@ button:disabled { cursor: not-allowed; }
   width: 100%;
   height: 36px;
   padding: 0 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-ctl);
   border: 1px solid var(--border-strong);
   background: var(--surface-2);
   font-size: 14px;
   outline: none;
   user-select: text;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
 }
 
 :root[data-platform="windows"] .dialog-input {
   height: 34px;
-  border-radius: 4px;
-  border-bottom-color: var(--text-3);
+  border-radius: var(--radius-ctl);
+  border-bottom-color: var(--border-strong);
   background: var(--ctrl);
 }
 
@@ -797,7 +828,7 @@ button:disabled { cursor: not-allowed; }
 
 .progress-track {
   height: 6px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--surface-2);
   border: 1px solid var(--border);
   overflow: hidden;
@@ -805,11 +836,11 @@ button:disabled { cursor: not-allowed; }
 
 .progress-bar {
   height: 100%;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--accent);
   transform-origin: left center;
   transform: scaleX(0);
-  transition: transform 0.5s ease;
+  transition: transform 0.5s var(--ease-out);
 }
 
 .steps { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 9px; }
@@ -854,13 +885,17 @@ button:disabled { cursor: not-allowed; }
 }
 
 /* ============ 设置页 ============ */
+/* macOS：平面分组卡（无边框）；Windows：Fluent 描边卡 */
 .settings-group {
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
+  border: none;
+  border-radius: var(--radius-card);
   padding: 4px 16px;
   margin-bottom: 16px;
+}
+
+:root[data-platform="windows"] .settings-group {
+  border: 1px solid var(--border);
 }
 
 .setting-row {
@@ -881,7 +916,7 @@ button:disabled { cursor: not-allowed; }
 .setting-select {
   height: 30px;
   padding: 0 8px;
-  border-radius: 7px;
+  border-radius: var(--radius-ctl);
   border: 1px solid var(--border-strong);
   background: var(--surface);
   color: var(--text);
@@ -891,7 +926,7 @@ button:disabled { cursor: not-allowed; }
 
 :root[data-platform="windows"] .setting-select {
   height: 32px;
-  border-radius: 4px;
+  border-radius: var(--radius-ctl);
   background: var(--ctrl);
 }
 
@@ -918,33 +953,35 @@ button:disabled { cursor: not-allowed; }
   gap: 8px;
   max-width: calc(100vw - 48px);
   padding: 10px 16px;
-  border-radius: 10px;
+  border-radius: var(--radius-ctl);
   font-size: 13px;
-  color: #fff;
-  background: #1f2937;
+  color: var(--toast-fg);
+  background: var(--toast-bg);
   box-shadow: var(--shadow-float);
   z-index: 200;
   cursor: pointer;
-  animation: toast-in 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.15);
+  animation: toast-in var(--dur) var(--ease-out);
 }
 
-:root[data-theme="dark"] .toast.success { background: #34d399; color: #0b2018; font-weight: 600; }
+/* 统一：成功 = 深绿底白字（双主题同源），错误 = err 底 */
+.toast.success { background: var(--toast-ok); color: #fff; }
 
-.toast.error { background: var(--err); }
+.toast.error { background: var(--err); color: #fff; }
 
 :root[data-platform="windows"] .toast {
   padding: 11px 18px;
-  border-radius: 6px;
+  border-radius: var(--radius-ctl);
   background: var(--surface);
   border: 1px solid var(--border);
   color: var(--text);
 }
 
 :root[data-platform="windows"] .toast.error { border-color: var(--err); color: var(--err); }
+:root[data-platform="windows"] .toast.success { background: var(--surface); color: var(--text); }
 
 .toast svg { width: 15px; height: 15px; flex: none; }
 :root[data-platform="windows"] .toast.success svg { color: var(--accent); }
-:root[data-theme="dark"] .toast.success svg { color: #0b2018; }
+:root[data-platform="windows"] .toast.error svg { color: var(--err); }
 
 /* busy 行内提示 */
 .busy-line {

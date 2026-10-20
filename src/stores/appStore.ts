@@ -60,7 +60,6 @@ export const useAppStore = defineStore("app", {
     async launch(path: string) {
       await this.runLong(t("launching"), async () => {
         await api.launchInstance(path);
-        this.showMessage(t("launchOk"), "info");
       });
     },
     async activate(path: string, pid: number | null) {
@@ -73,19 +72,16 @@ export const useAppStore = defineStore("app", {
     async terminate(pid: number) {
       await this.runLong(t("close"), async () => {
         await api.terminateInstance(pid);
-        this.showMessage(t("closed", { pid }), "info");
       });
     },
     async renameCopy(path: string, newName: string) {
       await this.runLong(t("saving"), async () => {
         await api.renameCopy(path, newName);
-        this.showMessage(t("renamed", { name: newName }), "info");
       });
     },
     async deleteCopy(path: string) {
       await this.runLong(t("deleting"), async () => {
         await api.deleteCopy(path);
-        this.showMessage(t("trashed"), "info");
       });
     },
     async rebuildCopy(path: string) {
@@ -97,7 +93,6 @@ export const useAppStore = defineStore("app", {
     async setMainAlias(name: string) {
       await this.runLong(t("saving"), async () => {
         await api.setMainAlias(name);
-        this.showMessage(t("remarkSaved"), "info");
       });
     },
     /** 启动时读取应用版本并检查 GitHub 最新 Release */

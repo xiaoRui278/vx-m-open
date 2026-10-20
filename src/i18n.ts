@@ -146,15 +146,10 @@ const messages = {
     // 更新横幅
     updateBanner: "VXMOpen v{version} 已发布，前往下载页获取新版本",
 
-    // Toast / 状态
-    launchOk: "已发起启动，窗口即将弹出",
-    closed: "实例 {pid} 已关闭",
+    // Toast / 状态（仅异步长任务完成与错误；可见结果静默——见 design.md）
     copyCreated: "副本「{name}」创建成功",
-    renamed: "已改名为「{name}」",
-    trashed: "副本已移到废纸篓（账号数据保留）",
     rebuilt: "副本已重建为新版本，账号无需重新登录",
     rebuiltAll: "已重建 {n} 个副本",
-    remarkSaved: "主程序备注已保存",
     opFailed: "操作失败",
     winNoCopy: "Windows 端不支持副本操作",
   },
@@ -272,14 +267,9 @@ const messages = {
 
     updateBanner: "VXMOpen v{version} is available — visit the release page to download",
 
-    launchOk: "Launch started, window will pop up shortly",
-    closed: "Instance {pid} closed",
     copyCreated: "Copy \"{name}\" created",
-    renamed: "Renamed to \"{name}\"",
-    trashed: "Copy moved to Trash (account data kept)",
     rebuilt: "Copy rebuilt to the new version, no re-login needed",
     rebuiltAll: "Rebuilt {n} copies",
-    remarkSaved: "Main app remark saved",
     opFailed: "Operation failed",
     winNoCopy: "Copy operations are not supported on Windows",
   },
