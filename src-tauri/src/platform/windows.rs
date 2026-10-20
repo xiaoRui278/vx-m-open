@@ -177,15 +177,26 @@ pub fn launch_targets(main_alias: Option<&str>) -> PlatformResult<Vec<LaunchTarg
     let Some(exe) = info.path.clone() else {
         return Ok(Vec::new());
     };
-    let exe_lower = exe.to_ascii_lowercase();
+    let exe_lower = exe
+        .trim_start_matches(r"\\?\")
+        .to_ascii_lowercase();
+    // 按进程映像名匹配（Weixin.exe / WeChat.exe），路径全串比对易受
+    // \\?\ 前缀、8.3 短路径、注册表路径陈旧等影响而漏检运行实例
+    let exe_name = Path::new(&exe)
+        .file_name()
+        .map(|n| n.to_string_lossy().to_ascii_lowercase())
+        .unwrap_or_default();
 
     let sys = System::new_all();
     let mut instances: Vec<(u32, u64)> = sys
         .processes()
         .values()
         .filter(|p| {
-            p.exe()
-                .is_some_and(|e: &Path| e.to_string_lossy().to_ascii_lowercase() == exe_lower)
+            let name_hit = p.name().to_string_lossy().to_ascii_lowercase() == exe_name;
+            let path_hit = p
+                .exe()
+                .is_some_and(|e: &Path| e.to_string_lossy().to_ascii_lowercase() == exe_lower);
+            (name_hit || path_hit)
                 // 排除 Chromium 风格子进程（--type=renderer 等）
                 && !p.cmd().iter().any(|a| a.to_string_lossy().starts_with("--type="))
         })
