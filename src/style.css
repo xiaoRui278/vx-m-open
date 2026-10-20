@@ -418,6 +418,14 @@ button:disabled { cursor: not-allowed; }
   font-weight: 400;
 }
 
+/* 恢复被上面高特异性覆盖掉的 primary 填充（否则白底白字 = 空白按钮） */
+:root[data-platform="windows"] .btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
 .btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent-text); }
 
 :root[data-platform="windows"] .btn:hover:not(:disabled) {

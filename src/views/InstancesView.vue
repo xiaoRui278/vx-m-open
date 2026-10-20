@@ -8,10 +8,12 @@ import { t } from "../i18n";
 import type { LaunchTarget } from "../types";
 import logo from "../assets/logo.png";
 
+import { isWindows as sharedIsWindows } from "../platform";
+
 const store = useAppStore();
 
 // 平台分支：Windows 走"本体多开"模型（无副本操作），macOS 走副本模型
-const isWindows = navigator.userAgent.includes("Windows");
+const isWindows = sharedIsWindows;
 
 // ================= 弹框（创建 / 改名 / 删除 / 重建确认） =================
 const showModal = ref(false);
@@ -226,18 +228,23 @@ async function runRebuildAll() {
 let unlisteners: UnlistenFn[] = [];
 
 onMounted(() => {
-  void listen<{ step: number; name: string }>("copy-progress", (e) => {
-    if (progressOpen.value) progressStep.value = e.payload.step;
-  }).then((u) => unlisteners.push(u));
+  // 浏览器预览（非 Tauri）没有事件系统，静默跳过
+  try {
+    void listen<{ step: number; name: string }>("copy-progress", (e) => {
+      if (progressOpen.value) progressStep.value = e.payload.step;
+    }).then((u) => unlisteners.push(u));
 
-  void listen<{ done: number; total: number; label: string }>(
-    "rebuild-all-progress",
-    (e) => {
-      rebuildAllTotal.value = e.payload.total;
-      rebuildAllDone.value = e.payload.done;
-      rebuildAllLabel.value = e.payload.label;
-    },
-  ).then((u) => unlisteners.push(u));
+    void listen<{ done: number; total: number; label: string }>(
+      "rebuild-all-progress",
+      (e) => {
+        rebuildAllTotal.value = e.payload.total;
+        rebuildAllDone.value = e.payload.done;
+        rebuildAllLabel.value = e.payload.label;
+      },
+    ).then((u) => unlisteners.push(u));
+  } catch {
+    /* 预览环境 */
+  }
 });
 
 onUnmounted(() => {

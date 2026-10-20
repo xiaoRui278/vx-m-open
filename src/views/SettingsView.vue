@@ -4,9 +4,10 @@ import { useAppStore, GITHUB_URL } from "../stores/appStore";
 import { locale, setLocale, t, type Locale } from "../i18n";
 import { setTheme, theme, type Theme } from "../prefs";
 import { openUrl } from "../api";
+import { isWindows as sharedIsWindows } from "../platform";
 
 const store = useAppStore();
-const isWindows = navigator.userAgent.includes("Windows");
+const isWindows = sharedIsWindows;
 
 const langOptions = computed(() => [
   { value: "zh" as Locale, label: "中文" },

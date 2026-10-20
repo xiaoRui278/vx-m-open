@@ -23,11 +23,21 @@ const views = {
   settings: SettingsView,
 };
 
-const isWindows = navigator.userAgent.includes("Windows");
+import { isWindows } from "./platform";
 const updateDismissed = ref(false);
 
 function openReleasePage() {
   void openUrl(`${GITHUB_URL}/releases/latest`);
+}
+
+// 浏览器预览没有窗口 API，静默降级
+function caption(action: "minimize" | "toggleMaximize" | "close") {
+  try {
+    const w = getCurrentWindow();
+    void (action === "minimize" ? w.minimize() : action === "close" ? w.close() : w.toggleMaximize());
+  } catch {
+    /* 预览环境 */
+  }
 }
 
 onMounted(() => {
@@ -50,9 +60,9 @@ const platformFoot = computed(
     </div>
     <div class="titlebar-spacer" data-tauri-drag-region></div>
     <div class="caption-group">
-      <button class="caption-btn" aria-label="minimize" @click="getCurrentWindow().minimize()" v-html="icons.captionMin"></button>
-      <button class="caption-btn" aria-label="maximize" @click="getCurrentWindow().toggleMaximize()" v-html="icons.captionMax"></button>
-      <button class="caption-btn close" :aria-label="t('close')" @click="getCurrentWindow().close()" v-html="icons.captionClose"></button>
+      <button class="caption-btn" aria-label="minimize" @click="caption('minimize')" v-html="icons.captionMin"></button>
+      <button class="caption-btn" aria-label="maximize" @click="caption('toggleMaximize')" v-html="icons.captionMax"></button>
+      <button class="caption-btn close" :aria-label="t('close')" @click="caption('close')" v-html="icons.captionClose"></button>
     </div>
   </div>
 
