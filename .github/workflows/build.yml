@@ -60,3 +60,24 @@ jobs:
           releaseBody: "请按平台下载安装包。macOS 为通用二进制（Apple Silicon / Intel 均可用），Windows 为 64 位安装包。"
           releaseDraft: true
           prerelease: false
+
+      # 手动触发时把安装包挂到本次 run 的 Artifacts，方便下载验证
+      - name: Upload macOS artifacts
+        if: matrix.os == 'macos-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: vx-m-open-macos-universal
+          path: |
+            src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
+            src-tauri/target/universal-apple-darwin/release/bundle/macos/*.app
+          if-no-files-found: error
+
+      - name: Upload Windows artifacts
+        if: matrix.os == 'windows-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: vx-m-open-windows-x64
+          path: |
+            src-tauri/target/release/bundle/msi/*.msi
+            src-tauri/target/release/bundle/nsis/*.exe
+          if-no-files-found: error

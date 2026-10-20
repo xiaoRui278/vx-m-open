@@ -21,6 +21,7 @@ trash = "5"
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.59", features = [
+  "Wdk_Foundation",
   "Wdk_System_SystemInformation",
   "Win32_Foundation",
   "Win32_Security",

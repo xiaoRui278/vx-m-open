@@ -29,3 +29,7 @@ export const rebuildCopy = (path: string) =>
 
 export const setMainAlias = (name: string) =>
   invoke<void>("set_main_alias", { name });
+
+export const rebuildAll = () => invoke<number>("rebuild_all");
+
+export const openUrl = (url: string) => invoke<void>("open_url", { url });

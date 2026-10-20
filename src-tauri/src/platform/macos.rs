@@ -342,8 +342,10 @@ fn is_running(app: &Path) -> bool {
     running_map(&sys).contains_key(&path_str)
 }
 
-/// 创建副本：APFS 克隆 → 改 Info.plist → 重签名
-pub fn generate(name: &str) -> PlatformResult<()> {
+/// 创建副本：APFS 克隆 → 改 Info.plist → 重签名。
+/// on_step 在每个大步骤完成时回调（1=克隆 2=改 Bundle ID 3=重签名），
+/// 供上层 emit 进度事件给前端逐步点亮。
+pub fn generate_with_progress(name: &str, on_step: &dyn Fn(u32)) -> PlatformResult<()> {
     let main = detect()?;
     let Some(src) = main.path else {
         return Err("未检测到微信主程序，无法创建副本".into());
@@ -369,7 +371,7 @@ pub fn generate(name: &str) -> PlatformResult<()> {
         if dest.exists() {
             return Err(format!("已存在同名应用：{}", dest.display()));
         }
-        match clone_and_sign(&src, &dest, &name, &bundle_id) {
+        match generate_one(&src, &dest, &name, &bundle_id, on_step) {
             Ok(()) => return Ok(()),
             Err(e) => {
                 cleanup_dir(&dest);
@@ -380,11 +382,12 @@ pub fn generate(name: &str) -> PlatformResult<()> {
     Err(format!("创建副本失败：{last_err}"))
 }
 
-fn clone_and_sign(
+fn generate_one(
     src: &Path,
     dest: &Path,
     name: &str,
     bundle_id: &str,
+    on_step: &dyn Fn(u32),
 ) -> PlatformResult<()> {
     // APFS 克隆（cp -c），非 APFS 卷回退普通复制
     let cloned = Command::new("/bin/cp")
@@ -406,8 +409,12 @@ fn clone_and_sign(
             return Err("复制应用文件失败（权限不足或磁盘空间不够）".into());
         }
     }
+    on_step(1);
     rewrite_plist(dest, Some(name), Some(bundle_id))?;
-    codesign_adhoc(dest)
+    on_step(2);
+    codesign_adhoc(dest)?;
+    on_step(3);
+    Ok(())
 }
 
 /// 重命名副本：Bundle ID 不变（数据容器与账号数据不受影响），
@@ -463,7 +470,7 @@ pub fn rebuild(path: &str) -> PlatformResult<()> {
 
     // 先移除旧副本，再克隆新版主程序
     trash::delete(&app).map_err(|e| format!("移除旧副本失败：{e}"))?;
-    if let Err(e) = clone_and_sign(&src, &dest, &name, &bundle_id) {
+    if let Err(e) = generate_one(&src, &dest, &name, &bundle_id, &|_| {}) {
         cleanup_dir(&dest);
         return Err(format!("重建失败：{e}（旧副本已在废纸篓，可手动恢复）"));
     }

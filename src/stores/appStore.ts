@@ -1,8 +1,12 @@
 import { defineStore } from "pinia";
+import { getVersion } from "@tauri-apps/api/app";
 import * as api from "../api";
+import { t } from "../i18n";
 import type { LaunchTarget, WeChatInfo } from "../types";
 
 let pollTimer: ReturnType<typeof setInterval> | null = null;
+
+export const GITHUB_URL = "https://github.com/xiaoRui278/vx-m-open";
 
 export const useAppStore = defineStore("app", {
   state: () => ({
@@ -13,6 +17,9 @@ export const useAppStore = defineStore("app", {
     message: "",
     messageType: "info" as "info" | "error",
     messageTimer: 0 as ReturnType<typeof setTimeout> | 0,
+    appVersion: "",
+    updateAvailable: false,
+    updateVersion: "",
   }),
   actions: {
     async refreshAll() {
@@ -51,9 +58,9 @@ export const useAppStore = defineStore("app", {
       }
     },
     async launch(path: string) {
-      await this.runLong("正在启动…", async () => {
+      await this.runLong(t("launching"), async () => {
         await api.launchInstance(path);
-        this.showMessage("已发起启动，窗口即将弹出", "info");
+        this.showMessage(t("launchOk"), "info");
       });
     },
     async activate(path: string, pid: number | null) {
@@ -64,46 +71,67 @@ export const useAppStore = defineStore("app", {
       }
     },
     async terminate(pid: number) {
-      await this.runLong("正在关闭…", async () => {
+      await this.runLong(t("close"), async () => {
         await api.terminateInstance(pid);
-        this.showMessage(`实例 ${pid} 已关闭`, "info");
-      });
-    },
-    async generateCopy(name: string) {
-      await this.runLong("正在创建副本（克隆 + 重签名，约 10 秒）…", async () => {
-        await api.generateCopy(name);
-        this.showMessage(`副本「${name}」创建成功`, "info");
+        this.showMessage(t("closed", { pid }), "info");
       });
     },
     async renameCopy(path: string, newName: string) {
-      await this.runLong("正在改名（重签名，约 10 秒）…", async () => {
+      await this.runLong(t("saving"), async () => {
         await api.renameCopy(path, newName);
-        this.showMessage(`已改名为「${newName}」`, "info");
+        this.showMessage(t("renamed", { name: newName }), "info");
       });
     },
     async deleteCopy(path: string) {
-      await this.runLong("正在移到废纸篓…", async () => {
+      await this.runLong(t("deleting"), async () => {
         await api.deleteCopy(path);
-        this.showMessage("副本已移到废纸篓（账号数据保留）", "info");
+        this.showMessage(t("trashed"), "info");
       });
     },
     async rebuildCopy(path: string) {
-      await this.runLong(
-        "正在重建副本（保留名字与账号数据，约 10 秒）…",
-        async () => {
-          await api.rebuildCopy(path);
-          this.showMessage("副本已重建为新版本，账号无需重新登录", "info");
-        },
-      );
+      await this.runLong(t("rebuilding"), async () => {
+        await api.rebuildCopy(path);
+        this.showMessage(t("rebuilt"), "info");
+      });
     },
     async setMainAlias(name: string) {
-      await this.runLong("保存中…", async () => {
+      await this.runLong(t("saving"), async () => {
         await api.setMainAlias(name);
-        this.showMessage("主程序备注已保存", "info");
+        this.showMessage(t("remarkSaved"), "info");
       });
+    },
+    /** 启动时读取应用版本并检查 GitHub 最新 Release */
+    async initVersion() {
+      try {
+        this.appVersion = await getVersion();
+      } catch {
+        this.appVersion = "";
+      }
+      await this.checkUpdate();
+    },
+    async checkUpdate(): Promise<boolean> {
+      try {
+        const res = await fetch(
+          `${GITHUB_URL.replace("github.com", "api.github.com/repos")}/releases/latest`,
+          { headers: { Accept: "application/vnd.github+json" } },
+        );
+        if (!res.ok) return false;
+        const data = (await res.json()) as { tag_name?: string };
+        const latest = (data.tag_name ?? "").replace(/^v/, "");
+        if (latest && isNewer(latest, this.appVersion)) {
+          this.updateVersion = latest;
+          this.updateAvailable = true;
+          return true;
+        }
+        this.updateAvailable = false;
+        return false;
+      } catch {
+        return false;
+      }
     },
     init() {
       void this.refreshAll();
+      void this.initVersion();
       if (pollTimer) clearInterval(pollTimer);
       pollTimer = setInterval(() => {
         if (!this.busy) void this.refreshAll();
@@ -111,3 +139,15 @@ export const useAppStore = defineStore("app", {
     },
   },
 });
+
+/** 语义化版本比较：a > b 返回 true */
+function isNewer(a: string, b: string): boolean {
+  const pa = a.split(".").map((n) => parseInt(n, 10) || 0);
+  const pb = b.split(".").map((n) => parseInt(n, 10) || 0);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const x = pa[i] ?? 0;
+    const y = pb[i] ?? 0;
+    if (x !== y) return x > y;
+  }
+  return false;
+}

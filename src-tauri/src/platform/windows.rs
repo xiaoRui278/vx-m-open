@@ -27,7 +27,9 @@ use windows_sys::Win32::UI::WindowsAndMessaging::{
     EnumWindows, GetWindowThreadProcessId, IsIconic, IsWindowVisible, PostThreadMessageW,
     SetForegroundWindow, ShowWindow, SW_RESTORE, WM_QUIT,
 };
-use windows_sys::Wdk::System::SystemInformation::{NtQueryObject, NtQuerySystemInformation};
+// windows-sys 0.61：NtQueryObject 在 Wdk::Foundation，NtQuerySystemInformation 在 Wdk::System::SystemInformation
+use windows_sys::Wdk::Foundation::NtQueryObject;
+use windows_sys::Wdk::System::SystemInformation::NtQuerySystemInformation;
 
 use super::{LaunchTarget, WeChatInfo};
 
@@ -239,6 +241,7 @@ struct SystemHandleInfoEx {
 }
 
 #[repr(C)]
+#[derive(Clone, Copy)]
 struct HandleTableEntryEx {
     object: *mut c_void,
     unique_process_id: usize,
@@ -511,7 +514,7 @@ pub fn terminate(pid: u32) -> PlatformResult<()> {
 
 // ---------- 副本操作（Windows 不适用） ----------
 
-pub fn generate(_name: &str) -> PlatformResult<()> {
+pub fn generate_with_progress(_name: &str, _on_step: &dyn Fn(u32)) -> PlatformResult<()> {
     Err(NO_COPY.into())
 }
 

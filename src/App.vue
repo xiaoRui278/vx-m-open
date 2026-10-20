@@ -1,48 +1,101 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
-import { useAppStore } from "./stores/appStore";
+import { computed, onMounted, ref } from "vue";
+import { getCurrentWindow } from "@tauri-apps/api/window";
+import { useAppStore, GITHUB_URL } from "./stores/appStore";
+import { icons } from "./icons";
+import { t } from "./i18n";
+import { initTheme } from "./prefs";
+import { openUrl } from "./api";
 import InstancesView from "./views/InstancesView.vue";
 import SettingsView from "./views/SettingsView.vue";
 
 const store = useAppStore();
 const active = ref<"instances" | "settings">("instances");
 
-const navItems = [
-  { key: "instances", label: "实例管理" },
-  { key: "settings", label: "设置" },
-] as const;
+const navItems = computed(() => [
+  { key: "instances" as const, label: t("navInstances"), icon: icons.instances },
+  { key: "settings" as const, label: t("navSettings"), icon: icons.settings },
+]);
 
 const views = {
   instances: InstancesView,
   settings: SettingsView,
 };
 
-onMounted(() => store.init());
+const isWindows = navigator.userAgent.includes("Windows");
+const updateDismissed = ref(false);
+
+function openReleasePage() {
+  void openUrl(`${GITHUB_URL}/releases/latest`);
+}
+
+onMounted(() => {
+  document.documentElement.dataset.platform = isWindows ? "windows" : "macos";
+  initTheme();
+  store.init();
+});
+
+const platformFoot = computed(
+  () => `v${store.appVersion || "0.1.0"} · ${isWindows ? "Windows" : "macOS"}`,
+);
 </script>
 
 <template>
+  <!-- Windows 自绘 Fluent 标题栏 -->
+  <div v-if="isWindows" class="titlebar" data-tauri-drag-region>
+    <div class="titlebar-app" data-tauri-drag-region>
+      <span class="brand-mark" aria-hidden="true" v-html="icons.brand"></span>
+      vx-m-open
+    </div>
+    <div class="titlebar-spacer" data-tauri-drag-region></div>
+    <div class="caption-group">
+      <button class="caption-btn" aria-label="minimize" @click="getCurrentWindow().minimize()" v-html="icons.captionMin"></button>
+      <button class="caption-btn" aria-label="maximize" @click="getCurrentWindow().toggleMaximize()" v-html="icons.captionMax"></button>
+      <button class="caption-btn close" :aria-label="t('close')" @click="getCurrentWindow().close()" v-html="icons.captionClose"></button>
+    </div>
+  </div>
+
   <div class="app">
+    <!-- 侧边栏（macOS）/ NavigationView（Windows） -->
     <aside class="sidebar">
-      <div class="logo">vx-m-open</div>
-      <button
-        v-for="item in navItems"
-        :key="item.key"
-        class="nav-item"
-        :class="{ active: active === item.key }"
-        @click="active = item.key"
-      >
-        {{ item.label }}
-      </button>
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true" v-html="icons.brand"></span>
+        <span class="brand-name">vx-m-open</span>
+      </div>
+      <nav class="nav" :aria-label="t('navInstances')">
+        <button
+          v-for="item in navItems"
+          :key="item.key"
+          class="nav-item"
+          :class="{ active: active === item.key }"
+          @click="active = item.key"
+        >
+          <span aria-hidden="true" v-html="item.icon"></span>
+          {{ item.label }}
+        </button>
+      </nav>
+      <div class="sidebar-foot">{{ platformFoot }}</div>
     </aside>
-    <main class="content">
+
+    <!-- 主区 -->
+    <main class="app-main">
+      <div v-if="store.updateAvailable && !updateDismissed" class="update-strip">
+        <span aria-hidden="true" v-html="icons.alert"></span>
+        <span class="head-fill">{{ t("updateBanner", { version: store.updateVersion }) }}</span>
+        <button class="btn sm" @click="openReleasePage">{{ t("updateDownload") }}</button>
+        <button class="dismiss" :aria-label="t('cancel')" @click="updateDismissed = true" v-html="icons.x"></button>
+      </div>
       <component :is="views[active]" />
     </main>
+
+    <!-- Toast -->
     <div
       v-if="store.message"
-      class="banner"
+      class="toast"
       :class="store.messageType"
       @click="store.clearMessage()"
     >
+      <span aria-hidden="true" v-html="store.messageType === 'error' ? icons.alert : icons.check"></span>
       {{ store.message }}
     </div>
   </div>

@@ -26,7 +26,7 @@ pub fn terminate(_pid: u32) -> PlatformResult<()> {
     Err(UNSUPPORTED.into())
 }
 
-pub fn generate(_name: &str) -> PlatformResult<()> {
+pub fn generate_with_progress(_name: &str, _on_step: &dyn Fn(u32)) -> PlatformResult<()> {
     Err(UNSUPPORTED.into())
 }
 
