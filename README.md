@@ -33,12 +33,16 @@
 ## 📸 界面预览
 
 <p align="center">
-  <img src="docs/images/ui-macos.png" width="440" alt="macOS 界面">
-  &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="docs/images/ui-windows.png" width="440" alt="Windows 界面">
+  <img src="docs/images/ui-macos-light.png" width="440" alt="macOS 亮色">&nbsp;&nbsp;&nbsp;&nbsp;<img src="docs/images/ui-macos-dark.png" width="440" alt="macOS 暗色">
 </p>
 <p align="center">
-  <sub>左：macOS 副本模型（Fluent 风格侧边栏 + 实例卡片）　右：Windows 本体多开（自绘标题栏 + 运行实例列表）</sub>
+  <sub>macOS 副本模型：系统设置式平面语言 + 实例卡片（亮 / 暗）</sub>
+</p>
+<p align="center">
+  <img src="docs/images/ui-windows-light.png" width="440" alt="Windows 亮色">&nbsp;&nbsp;&nbsp;&nbsp;<img src="docs/images/ui-windows-dark.png" width="440" alt="Windows 暗色">
+</p>
+<p align="center">
+  <sub>Windows 本体多开：Fluent 自绘标题栏 + 主程序卡 + 运行实例列表（亮 / 暗）</sub>
 </p>
 
 ## 🧩 多开原理
