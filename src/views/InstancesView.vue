@@ -334,7 +334,7 @@ const anyDialogOpen = computed(
           v-for="x in store.targets"
           :key="x.isMain ? x.path : `${x.path}#${x.pid ?? 'idle'}`"
           class="instance"
-          :class="{ outdated: x.outdated }"
+          :data-state="x.running ? 'running' : x.outdated ? 'outdated' : 'stopped'"
         >
           <div class="avatar" :class="{ main: x.isMain }" aria-hidden="true">{{ displayName(x).slice(0, 1) }}</div>
           <div class="ident">
@@ -406,7 +406,7 @@ const anyDialogOpen = computed(
     <!-- ========== Windows：主程序大卡 + 运行实例行 ========== -->
     <template v-else>
       <h2 class="section-label">{{ t("main") }}</h2>
-      <div v-if="mainTarget" class="instance">
+      <div v-if="mainTarget" class="instance" :data-state="mainTarget.running ? 'running' : 'stopped'">
         <div class="avatar main" aria-hidden="true" v-html="icons.wechat"></div>
         <div class="ident">
           <div class="ident-name-line">

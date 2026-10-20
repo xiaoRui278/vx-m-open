@@ -18,6 +18,7 @@
   --accent-hover: #2452bd;
   --accent-text: #1e4db8;
   --accent-weak: rgba(43, 98, 217, 0.10);
+  --ok-weak: rgba(10, 143, 102, 0.08);
   --ok: #0a8f66;
   --warn-text: #9a5b00;
   --warn-weak: rgba(217, 119, 6, 0.12);
@@ -47,6 +48,7 @@
   --accent-hover: #6394f3;
   --accent-text: #6ea2f5;
   --accent-weak: rgba(93, 141, 240, 0.16);
+  --ok-weak: rgba(10, 143, 102, 0.22);
   --warn-text: #f0b13e;
   --warn-weak: rgba(240, 177, 62, 0.12);
   --err: #ef6a60;
@@ -73,6 +75,7 @@
   --accent-hover: #3a70e2;
   --accent-text: #1e4db8;
   --accent-weak: rgba(43, 98, 217, 0.10);
+  --ok-weak: rgba(10, 143, 102, 0.08);
   --warn-text: #9a5b00;
   --warn-weak: rgba(217, 119, 6, 0.12);
   --err: #c42b1c;
@@ -103,6 +106,7 @@
   --accent-hover: #6394f3;
   --accent-text: #6ea2f5;
   --accent-weak: rgba(93, 141, 240, 0.16);
+  --ok-weak: rgba(10, 143, 102, 0.22);
   --warn-text: #f0b13e;
   --warn-weak: rgba(240, 177, 62, 0.12);
   --err: #ff8a7a;
@@ -561,11 +565,19 @@ button:disabled { cursor: not-allowed; }
   transition: border-color 0.15s ease;
 }
 
-.instance:hover { border-color: var(--border-strong); }
+.instance[data-state="stopped"]:hover { border-color: var(--border-strong); }
 
-.instance.outdated {
+/* 卡片级状态着色：状态「印」在卡片上，窗口缩放 / 内容换行时信息不丢失 */
+.instance[data-state="running"] {
+  border-color: var(--ok);
+  box-shadow: inset 4px 0 0 var(--ok), var(--shadow-card);
+  background: linear-gradient(to right, var(--ok-weak), var(--surface) 55%);
+}
+
+.instance[data-state="outdated"] {
   border-color: var(--warn-text);
-  box-shadow: inset 3px 0 0 var(--warn-text), var(--shadow-card);
+  box-shadow: inset 4px 0 0 var(--warn-text), var(--shadow-card);
+  background: linear-gradient(to right, var(--warn-weak), var(--surface) 55%);
 }
 
 .avatar {
