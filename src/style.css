@@ -595,7 +595,7 @@ button:disabled { cursor: not-allowed; }
 
 .avatar svg { width: 22px; height: 22px; }
 
-.ident { flex: 1; min-width: 180px; }
+.ident { flex: 1; min-width: 150px; }
 
 .ident-name-line { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
 
@@ -656,6 +656,18 @@ button:disabled { cursor: not-allowed; }
 .status-time, .status-note { font-size: 11px; color: var(--text-3); padding-left: 3px; }
 
 /* 操作区 */
+/* 右侧组合区：状态胶囊 + 操作按钮同组换行，避免按钮单独掉行导致错乱 */
+.side-zone {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  margin-left: auto;
+}
+
+.side-zone .actions { margin-left: 0; }
+
 .actions {
   display: flex;
   align-items: center;
@@ -665,7 +677,11 @@ button:disabled { cursor: not-allowed; }
   margin-left: auto;
 }
 
-:root[data-platform="windows"] .actions { justify-content: flex-start; margin-left: 0; }
+/* Windows 运行实例行：操作按钮靠左，主卡 / 副本卡不受影响 */
+:root[data-platform="windows"] .instance-row .actions {
+  justify-content: flex-start;
+  margin-left: 0;
+}
 
 /* ---- Windows 运行实例行 ---- */
 .instance-row {
@@ -1055,5 +1071,5 @@ button:disabled { cursor: not-allowed; }
 
   .status-zone { justify-self: start; }
 
-  .actions { width: 100%; justify-content: flex-start; padding-top: 4px; }
+  .side-zone, .actions { width: 100%; justify-content: flex-start; padding-top: 4px; }
 }

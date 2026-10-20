@@ -353,6 +353,7 @@ const anyDialogOpen = computed(
               <template v-else>{{ t("outdatedHint") }}</template>
             </div>
           </div>
+          <div class="side-zone">
           <div class="status-zone">
             <span class="status" :class="x.running ? 'running' : x.outdated ? 'outdated' : 'stopped'">
               <span class="dot"></span>{{ x.running ? t("running") : x.outdated ? t("outdated") : t("stopped") }}
@@ -389,6 +390,7 @@ const anyDialogOpen = computed(
               </button>
             </template>
           </div>
+          </div>
         </article>
       </div>
       <div v-else class="empty">
@@ -414,6 +416,7 @@ const anyDialogOpen = computed(
           <div class="ident-path"><span class="path-text">{{ mainTarget.path }}</span></div>
           <div class="meta-line">{{ t("winModel") }}</div>
         </div>
+        <div class="side-zone">
         <div class="status-zone">
           <span class="status" :class="mainTarget.running ? 'running' : 'stopped'">
             <span class="dot"></span>
@@ -430,6 +433,7 @@ const anyDialogOpen = computed(
           <button class="btn ghost sm" :disabled="store.busy || anyDialogOpen" @click="openRename(mainTarget)">
             <span aria-hidden="true" v-html="icons.pencil"></span>{{ t("remark") }}
           </button>
+        </div>
         </div>
       </div>
 
