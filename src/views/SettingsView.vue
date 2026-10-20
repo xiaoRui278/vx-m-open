@@ -41,7 +41,7 @@ function openReleasePage() {
 
 const versionText = computed(() => {
   const suffix = isWindows ? t("versionSuffixWin") : t("versionSuffixMac");
-  return `v${store.appVersion || "0.1.0"}${suffix}`;
+  return `v${store.appVersion || "1.0.0"}${suffix}`;
 });
 </script>
 

@@ -84,6 +84,8 @@ pnpm tauri dev    # 开发模式（热重载）
 pnpm tauri build  # 打包 dmg / msi
 ```
 
+> 🚢 **发版**：普通提交不触发构建；发新版只需改版本号后 `git tag vX.Y.Z && git push origin vX.Y.Z`，CI 自动构建双平台并创建正式 Release。
+
 ## 📖 使用方法
 
 ### macOS（副本模型）
@@ -142,17 +144,22 @@ src/                        # 前端（Vue 3 + TypeScript）
 - [x] M3 版本同步检测 + 一键重建；GitHub Actions 打包
 - [x] M4 Windows 互斥体多开模块
 - [x] M4.5 UI/UX 重构：双平台界面 + 中英双语 + 明暗主题 + 新版本提醒
-- [ ] M5 开源发布（正式 Release、Homebrew / Scoop 分发）
+- [x] M5 v1.0.0 正式发布（tag 触发自动 Release）
+- [ ] M6 Homebrew / Scoop 分发、应用内自动更新
 
 ## 📝 更新日志
 
-### Unreleased
+### v1.0.0 (2026-10-20)
+- 🎉 首个正式版本
 - 🎨 全新界面：macOS / Windows Fluent 双平台设计，亮暗双主题
 - 🌐 中英双语，可设置首选语言
-- ✨ 创建副本改为分步进度弹框（克隆 → 改 Bundle ID → 重签名）
-- ✨ 新增「全部重建」批量重建落后副本，带进度展示
-- ✨ 设置页新增语言 / 主题 / GitHub / 检查更新
+- ✨ 创建副本分步进度弹框（克隆 → 改 Bundle ID → 重签名）
+- ✨ 「全部重建」批量重建落后副本，带进度展示
+- ✨ 设置页：语言 / 主题 / GitHub / 检查更新
 - 🔔 启动时检查新版本，顶部提示前往下载
+- ✅ macOS：副本创建 / 改名 / 删除、启动 / 激活 / 关闭、版本同步重建
+- ✅ Windows：互斥体多开、实例列表管理
+- ✅ GitHub Actions：tag 触发自动构建并发布 Release
 
 ### v0.1.0
 - ✅ macOS：环境检测、副本创建 / 改名 / 删除、启动 / 激活 / 关闭、版本同步重建

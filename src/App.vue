@@ -37,7 +37,7 @@ onMounted(() => {
 });
 
 const platformFoot = computed(
-  () => `v${store.appVersion || "0.1.0"} · ${isWindows ? "Windows" : "macOS"}`,
+  () => `v${store.appVersion || "1.0.0"} · ${isWindows ? "Windows" : "macOS"}`,
 );
 </script>
 
