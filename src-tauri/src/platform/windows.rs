@@ -27,7 +27,7 @@ use windows_sys::Win32::UI::WindowsAndMessaging::{
     EnumWindows, GetWindowThreadProcessId, IsIconic, IsWindowVisible, PostThreadMessageW,
     SetForegroundWindow, ShowWindow, SW_RESTORE, WM_QUIT,
 };
-use windows_sys::Wdk::System::SystemServices::{NtQueryObject, NtQuerySystemInformation};
+use windows_sys::Wdk::System::SystemInformation::{NtQueryObject, NtQuerySystemInformation};
 
 use super::{LaunchTarget, WeChatInfo};
 
