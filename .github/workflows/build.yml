@@ -1,0 +1,62 @@
+name: Release Build
+
+# 打 tag（v*）或手动触发，构建产物以草稿 Release 形式挂到仓库，确认后发布
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # macOS 通用二进制：同时支持 Apple Silicon 与 Intel
+          - os: macos-latest
+            rust_targets: aarch64-apple-darwin,x86_64-apple-darwin
+            args: --target universal-apple-darwin
+          # Windows 64 位
+          - os: windows-latest
+            rust_targets: ""
+            args: ""
+    permissions:
+      contents: write
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust_targets }}
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build and upload to draft release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          args: ${{ matrix.args }}
+          tagName: v__VERSION__
+          releaseName: vx-m-open v__VERSION__
+          releaseBody: "请按平台下载安装包。macOS 为通用二进制（Apple Silicon / Intel 均可用），Windows 为 64 位安装包。"
+          releaseDraft: true
+          prerelease: false

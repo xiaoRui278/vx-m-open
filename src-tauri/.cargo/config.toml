@@ -1,0 +1,9 @@
+# 国内 crates.io 镜像（rsproxy），仅对本项目生效；海外环境可删除本文件
+[source.crates-io]
+replace-with = 'rsproxy-sparse'
+
+[source.rsproxy-sparse]
+registry = "sparse+https://rsproxy.cn/index/"
+
+[registries.rsproxy]
+index = "sparse+https://rsproxy.cn/index/"
