@@ -36,9 +36,6 @@
     "windows": {
       "nsis": {
         "installerIcon": "icons/icon.ico"
-      },
-      "wix": {
-        "icon": "icons/icon.ico"
       }
     }
   }
