@@ -112,7 +112,8 @@ pub fn launch_targets(main_alias: Option<&str>) -> PlatformResult<Vec<LaunchTarg
             app_name: MAIN_APP_NAME.into(),
             label: main_alias
                 .filter(|s| !s.trim().is_empty())
-                .unwrap_or("主程序")
+                // 语言中立标记值，前端对主程序做 i18n 映射（微信 / WeChat）
+                .unwrap_or("WeChat")
                 .to_string(),
             version: main.version.clone(),
             is_main: true,

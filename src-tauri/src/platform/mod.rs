@@ -41,7 +41,7 @@ pub struct LaunchTarget {
     pub path: String,
     /// .app 目录名（如 WeChat.app）
     pub app_name: String,
-    /// 展示名：主程序用备注名（无则"主程序"），副本用目录名
+    /// 展示名：主程序用备注名（无则 "WeChat"，由前端 i18n 映射），副本用目录名
     pub label: String,
     pub version: Option<String>,
     pub is_main: bool,

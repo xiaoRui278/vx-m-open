@@ -245,6 +245,11 @@ onUnmounted(() => {
 });
 
 // ================= 列表渲染辅助 =================
+/** 主程序默认 label 为后端标记值 "WeChat"，按界面语言映射；备注名原样显示 */
+function displayName(x: LaunchTarget): string {
+  return x.isMain && x.label === "WeChat" ? t("wechat") : x.label;
+}
+
 function closeTarget(x: LaunchTarget) {
   if (x.pid != null) void store.terminate(x.pid);
 }
@@ -330,10 +335,10 @@ const anyDialogOpen = computed(
           class="instance"
           :class="{ outdated: x.outdated }"
         >
-          <div class="avatar" :class="{ main: x.isMain }" aria-hidden="true">{{ x.label.slice(0, 1) }}</div>
+          <div class="avatar" :class="{ main: x.isMain }" aria-hidden="true">{{ displayName(x).slice(0, 1) }}</div>
           <div class="ident">
             <div class="ident-name-line">
-              <span class="ident-name">{{ x.label }}</span>
+              <span class="ident-name">{{ displayName(x) }}</span>
               <span class="tag" :class="x.isMain ? 'main' : 'copy'">{{ x.isMain ? t("main") : t("copy") }}</span>
             </div>
             <div class="ident-path"><span class="path-text">{{ x.path }}</span></div>
@@ -402,7 +407,7 @@ const anyDialogOpen = computed(
         <div class="avatar main" aria-hidden="true" v-html="icons.wechat"></div>
         <div class="ident">
           <div class="ident-name-line">
-            <span class="ident-name">{{ mainTarget.label }}</span>
+            <span class="ident-name">{{ displayName(mainTarget) }}</span>
             <span class="tag main">{{ t("main") }}</span>
           </div>
           <div class="ident-path"><span class="path-text">{{ mainTarget.path }}</span></div>

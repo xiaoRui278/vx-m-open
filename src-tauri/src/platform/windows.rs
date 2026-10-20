@@ -204,7 +204,8 @@ pub fn launch_targets(main_alias: Option<&str>) -> PlatformResult<Vec<LaunchTarg
         app_name,
         label: main_alias
             .filter(|s| !s.trim().is_empty())
-            .unwrap_or("主程序")
+            // 语言中立标记值，前端对主程序做 i18n 映射（微信 / WeChat）
+            .unwrap_or("WeChat")
             .to_string(),
         version: info.version.clone(),
         is_main: true,
@@ -219,7 +220,7 @@ pub fn launch_targets(main_alias: Option<&str>) -> PlatformResult<Vec<LaunchTarg
         targets.push(LaunchTarget {
             path: exe.clone(),
             app_name: String::new(),
-            label: format!("实例 {}", i + 1),
+            label: format!("Instance {}", i + 1),
             version: info.version.clone(),
             is_main: false,
             running: true,
