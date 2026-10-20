@@ -6,6 +6,7 @@ import * as api from "../api";
 import { icons } from "../icons";
 import { t } from "../i18n";
 import type { LaunchTarget } from "../types";
+import logo from "../assets/logo.png";
 
 const store = useAppStore();
 
@@ -391,7 +392,7 @@ const anyDialogOpen = computed(
         </article>
       </div>
       <div v-else class="empty">
-        <div class="empty-icon" aria-hidden="true" v-html="icons.brand"></div>
+        <img class="empty-logo" :src="logo" alt="">
         <div class="empty-title">{{ t("emptyTitle") }}</div>
         <p class="empty-sub">{{ t("emptySub") }}</p>
         <button class="btn primary" :disabled="store.busy || anyDialogOpen" @click="openCreate">
@@ -457,7 +458,7 @@ const anyDialogOpen = computed(
         </article>
       </template>
       <div v-else class="empty">
-        <div class="empty-icon" aria-hidden="true" v-html="icons.brand"></div>
+        <img class="empty-logo" :src="logo" alt="">
         <div class="empty-title">{{ t("winEmptyTitle") }}</div>
         <p class="empty-sub">{{ t("winEmptySub") }}</p>
         <button class="btn primary" :disabled="store.busy || anyDialogOpen" @click="store.launch(mainTarget?.path ?? '')">

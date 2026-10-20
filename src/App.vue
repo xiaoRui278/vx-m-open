@@ -6,6 +6,7 @@ import { icons } from "./icons";
 import { t } from "./i18n";
 import { initTheme } from "./prefs";
 import { openUrl } from "./api";
+import logo from "./assets/logo.png";
 import InstancesView from "./views/InstancesView.vue";
 import SettingsView from "./views/SettingsView.vue";
 
@@ -44,7 +45,7 @@ const platformFoot = computed(
   <!-- Windows 自绘 Fluent 标题栏 -->
   <div v-if="isWindows" class="titlebar" data-tauri-drag-region>
     <div class="titlebar-app" data-tauri-drag-region>
-      <span class="brand-mark" aria-hidden="true" v-html="icons.brand"></span>
+      <img class="brand-mark" :src="logo" alt="">
       vx-m-open
     </div>
     <div class="titlebar-spacer" data-tauri-drag-region></div>
@@ -59,7 +60,7 @@ const platformFoot = computed(
     <!-- 侧边栏（macOS）/ NavigationView（Windows） -->
     <aside class="sidebar">
       <div class="brand">
-        <span class="brand-mark" aria-hidden="true" v-html="icons.brand"></span>
+        <img class="brand-mark" :src="logo" alt="">
         <span class="brand-name">vx-m-open</span>
       </div>
       <nav class="nav" :aria-label="t('navInstances')">

@@ -173,7 +173,6 @@ button:disabled { cursor: not-allowed; }
 }
 
 .titlebar-app .brand-mark { width: 18px; height: 18px; border-radius: 4px; }
-.titlebar-app .brand-mark svg { width: 11px; height: 11px; }
 
 .titlebar-spacer { flex: 1; height: 100%; }
 
@@ -234,14 +233,9 @@ button:disabled { cursor: not-allowed; }
   width: 26px;
   height: 26px;
   border-radius: 7px;
-  background: var(--accent);
-  color: #fff;
-  display: grid;
-  place-items: center;
+  display: block;
   flex: none;
 }
-
-.brand-mark svg { width: 15px; height: 15px; }
 
 .brand-name {
   font-weight: 700;
@@ -721,20 +715,15 @@ button:disabled { cursor: not-allowed; }
   text-align: center;
 }
 
-.empty-icon {
+.empty-logo {
   width: 44px;
   height: 44px;
-  margin: 0 auto 12px;
   border-radius: 12px;
-  background: var(--surface-2);
-  color: var(--text-3);
-  display: grid;
-  place-items: center;
+  display: block;
+  margin: 0 auto 12px;
 }
 
-:root[data-platform="windows"] .empty-icon { border-radius: 8px; }
-
-.empty-icon svg { width: 22px; height: 22px; }
+:root[data-platform="windows"] .empty-logo { border-radius: 8px; }
 
 .empty-title { font-weight: 600; font-size: 14.5px; }
 
