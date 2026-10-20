@@ -13,7 +13,7 @@
   --border-strong: #d2d6dc;
   --text: #1b1e22;
   --text-2: #5c626c;
-  --text-3: #8b919b;
+  --text-3: #6f7680;
   --accent: #2b62d9;
   --accent-hover: #2452bd;
   --accent-text: #1e4db8;
@@ -43,7 +43,7 @@
   --border-strong: #3c4046;
   --text: #e8eaed;
   --text-2: #a2a8b0;
-  --text-3: #767c85;
+  --text-3: #8a919b;
   --accent: #4d82f0;
   --accent-hover: #6394f3;
   --accent-text: #6ea2f5;
@@ -70,7 +70,7 @@
   --ctrl: #fdfdfd;
   --text: #1a1a1a;
   --text-2: #5d5d5d;
-  --text-3: #8a8a8a;
+  --text-3: #757575;
   --accent: #2b62d9;
   --accent-hover: #3a70e2;
   --accent-text: #1e4db8;
@@ -101,7 +101,7 @@
   --ctrl: #333333;
   --text: #ffffff;
   --text-2: #c9c9c9;
-  --text-3: #9a9a9a;
+  --text-3: #a4a4a4;
   --accent: #4d82f0;
   --accent-hover: #6394f3;
   --accent-text: #6ea2f5;
@@ -152,8 +152,8 @@ button:disabled { cursor: not-allowed; }
 
 .path-text {
   font-family: var(--font-mono);
-  font-size: 11.5px;
-  color: var(--text-3);
+  font-size: 12px;
+  color: var(--text-2);
   word-break: break-all;
   user-select: text;
 }
@@ -324,20 +324,20 @@ button:disabled { cursor: not-allowed; }
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 18px 24px 14px;
+  padding: 18px 24px 16px;
   border-bottom: 1px solid var(--border);
 }
 
-:root[data-platform="windows"] .page-head { padding: 20px 24px 14px; }
+:root[data-platform="windows"] .page-head { padding: 20px 24px 16px; }
 
 .page-title { margin: 0; font-size: 19px; font-weight: 700; letter-spacing: 0.2px; }
 :root[data-platform="windows"] .page-title { font-size: 20px; font-weight: 650; }
 
-.page-sub { margin: 2px 0 0; font-size: 12.5px; color: var(--text-2); }
+.page-sub { margin: 3px 0 0; font-size: 13px; color: var(--text-2); }
 
 .page-head .head-fill { flex: 1 1 0; min-width: 0; }
 
-.content { flex: 1; min-height: 0; overflow-y: auto; padding: 2px 24px 28px; }
+.content { flex: 1; min-height: 0; overflow-y: auto; padding: 20px 24px 28px; }
 
 .view { display: block; animation: fade-in 0.18s ease-out; }
 
@@ -487,7 +487,7 @@ button:disabled { cursor: not-allowed; }
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
   padding: 13px 16px;
-  margin-bottom: 14px;
+  margin-bottom: 18px;
 }
 
 .env-icon {
@@ -522,7 +522,7 @@ button:disabled { cursor: not-allowed; }
   vertical-align: 1px;
 }
 
-.env-path { margin-top: 1px; }
+.env-path { margin-top: 2px; }
 
 /* ============ 版本落后警示 ============ */
 .warn-strip {
@@ -631,7 +631,7 @@ button:disabled { cursor: not-allowed; }
 
 .meta-line .sep { margin: 0 5px; opacity: 0.55; }
 
-.meta-pid { font-family: var(--font-mono); font-size: 11.5px; color: var(--text-3); user-select: text; }
+.meta-pid { font-family: var(--font-mono); font-size: 12px; color: var(--text-3); user-select: text; }
 
 /* 操作区 */
 .actions {
@@ -716,6 +716,7 @@ button:disabled { cursor: not-allowed; }
   position: fixed;
   inset: 0;
   background: rgba(15, 18, 22, 0.44);
+  backdrop-filter: blur(3px);
   display: flex;
   align-items: center;
   justify-content: center;
