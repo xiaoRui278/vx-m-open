@@ -353,12 +353,6 @@ const anyDialogOpen = computed(
               <template v-else>{{ t("outdatedHint") }}</template>
             </div>
           </div>
-          <div class="side-zone">
-          <div class="status-zone">
-            <span class="status" :class="x.running ? 'running' : x.outdated ? 'outdated' : 'stopped'">
-              <span class="dot"></span>{{ x.running ? t("running") : x.outdated ? t("outdated") : t("stopped") }}
-            </span>
-          </div>
           <div class="actions">
             <template v-if="!x.running">
               <button class="btn primary sm" :disabled="store.busy || anyDialogOpen" @click="store.launch(x.path)">
@@ -390,7 +384,6 @@ const anyDialogOpen = computed(
               </button>
             </template>
           </div>
-          </div>
         </article>
       </div>
       <div v-else class="empty">
@@ -414,15 +407,10 @@ const anyDialogOpen = computed(
             <span class="tag main">{{ t("main") }}</span>
           </div>
           <div class="ident-path"><span class="path-text">{{ mainTarget.path }}</span></div>
-          <div class="meta-line">{{ t("winModel") }}</div>
-        </div>
-        <div class="side-zone">
-        <div class="status-zone">
-          <span class="status" :class="mainTarget.running ? 'running' : 'stopped'">
-            <span class="dot"></span>
-            {{ mainTarget.running ? t("instancesRunning", { n: mainTarget.instanceCount }) : t("stopped") }}
-          </span>
-          <span v-if="mainTarget.running" class="status-note">{{ t("canOpenMore") }}</span>
+          <div class="meta-line">
+            {{ t("winModel") }}
+            <template v-if="mainTarget.running"> · {{ t("instancesRunning", { n: mainTarget.instanceCount }) }}</template>
+          </div>
         </div>
         <div class="actions">
           <button class="btn primary lg" :disabled="store.busy || anyDialogOpen" @click="store.launch(mainTarget.path)">
@@ -433,7 +421,6 @@ const anyDialogOpen = computed(
           <button class="btn ghost sm" :disabled="store.busy || anyDialogOpen" @click="openRename(mainTarget)">
             <span aria-hidden="true" v-html="icons.pencil"></span>{{ t("remark") }}
           </button>
-        </div>
         </div>
       </div>
 

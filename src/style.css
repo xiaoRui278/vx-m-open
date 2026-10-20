@@ -633,53 +633,7 @@ button:disabled { cursor: not-allowed; }
 
 .meta-pid { font-family: var(--font-mono); font-size: 11.5px; color: var(--text-3); user-select: text; }
 
-/* 状态区 */
-.status-zone {
-  display: grid;
-  justify-items: start;
-  gap: 3px;
-  min-width: 118px;
-}
-
-:root[data-platform="windows"] .status-zone { min-width: 128px; }
-
-.status {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 2.5px 9px;
-  border-radius: 999px;
-  font-size: 11.5px;
-  font-weight: 600;
-}
-
-.status .dot { width: 6px; height: 6px; border-radius: 50%; flex: none; }
-
-.status.running { background: var(--accent-weak); color: var(--accent-text); }
-.status.running .dot { background: var(--ok); }
-:root[data-platform="windows"] .status.running .dot { background: var(--accent); }
-
-.status.stopped { background: var(--surface-2); color: var(--text-3); border: 1px solid var(--border); }
-.status.stopped .dot { background: var(--text-3); opacity: 0.6; }
-
-.status.outdated { background: var(--warn-weak); color: var(--warn-text); }
-.status.outdated .dot { background: var(--warn-text); }
-
-.status-time, .status-note { font-size: 11px; color: var(--text-3); padding-left: 3px; }
-
 /* 操作区 */
-/* 右侧组合区：状态胶囊 + 操作按钮同组换行，避免按钮单独掉行导致错乱 */
-.side-zone {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  margin-left: auto;
-}
-
-.side-zone .actions { margin-left: 0; }
-
 .actions {
   display: flex;
   align-items: center;
@@ -1081,7 +1035,5 @@ button:disabled { cursor: not-allowed; }
 
   .ident { flex-basis: calc(100% - 54px); }
 
-  .status-zone { justify-self: start; }
-
-  .side-zone, .actions { width: 100%; justify-content: flex-start; padding-top: 4px; }
+  .actions { width: 100%; justify-content: flex-start; padding-top: 4px; }
 }

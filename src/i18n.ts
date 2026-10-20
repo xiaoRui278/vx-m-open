@@ -48,9 +48,6 @@ const messages = {
     main: "主程序",
     wechat: "微信",
     copy: "副本",
-    running: "运行中",
-    stopped: "未运行",
-    outdated: "版本落后",
     outdatedHint: "微信升级后需重建副本",
     launch: "启动",
     activate: "激活",
@@ -70,7 +67,6 @@ const messages = {
     winEmptySub: "点击上方「启动新实例」即可多开一个微信，用不同账号同时登录",
     runningLabel: "运行中的实例",
     instance: "实例",
-    canOpenMore: "可继续多开",
     instancesRunning: "{n} 个实例运行中",
 
     // 弹框
@@ -185,9 +181,6 @@ const messages = {
     main: "Main",
     wechat: "WeChat",
     copy: "Copy",
-    running: "Running",
-    stopped: "Stopped",
-    outdated: "Outdated",
     outdatedHint: "Rebuild required after WeChat update",
     launch: "Launch",
     activate: "Activate",
@@ -206,7 +199,6 @@ const messages = {
     winEmptySub: "Click \"Launch New Instance\" above to open another WeChat and sign in with a different account",
     runningLabel: "Running Instances",
     instance: "Instance",
-    canOpenMore: "More can be opened",
     instancesRunning: "{n} instance(s) running",
 
     cancel: "Cancel",
