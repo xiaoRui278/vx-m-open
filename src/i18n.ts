@@ -143,6 +143,12 @@ const messages = {
     checking: "检查中…",
     checkFailed: "检查失败（网络不可用）",
 
+    // 支持作者
+    donateTitle: "支持作者",
+    donateSub: "觉得工具好用，请作者喝杯咖啡吧",
+    donateWechat: "微信支付",
+    donateAlipay: "支付宝",
+
     // 更新横幅
     updateBanner: "VXMOpen v{version} 已发布，前往下载页获取新版本",
 
@@ -264,6 +270,11 @@ const messages = {
     updateDownload: "Download",
     checking: "Checking…",
     checkFailed: "Check failed (network unavailable)",
+
+    donateTitle: "Support the Author",
+    donateSub: "Enjoying this tool? Buy the author a coffee",
+    donateWechat: "WeChat Pay",
+    donateAlipay: "Alipay",
 
     updateBanner: "VXMOpen v{version} is available — visit the release page to download",
 

@@ -156,13 +156,14 @@ src/                        # 前端（Vue 3 + TypeScript）
 
 ## 📝 更新日志
 
-### v1.0.0 (2026-10-20)
+### v1.0.0 (2026-10-21)
 - 🎉 首个正式版本
 - 🎨 全新界面：macOS / Windows Fluent 双平台设计，亮暗双主题
 - 🌐 中英双语，可设置首选语言
 - ✨ 创建副本分步进度弹框（克隆 → 改 Bundle ID → 重签名）
 - ✨ 「全部重建」批量重建落后副本，带进度展示
 - ✨ 设置页：语言 / 主题 / GitHub / 检查更新
+- ☕ 设置页与 README 新增「支持作者」捐赠入口（微信 / 支付宝收款码）
 - 🔔 启动时检查新版本，顶部提示前往下载
 - ✅ macOS：副本创建 / 改名 / 删除、启动 / 激活 / 关闭、版本同步重建
 - ✅ Windows：互斥体多开、实例列表管理
@@ -178,6 +179,17 @@ src/                        # 前端（Vue 3 + TypeScript）
 本工具只做启动层处理，刻意不做以下功能：自动化操作、群控、批量营销、防撤回、消息修改。
 
 > ⚠️ 本项目为非官方第三方工具，与腾讯官方无关。仅供个人多账号管理使用，请遵守《微信软件许可及服务协议》，使用风险自负。
+
+## ☕ 支持作者
+
+如果这个工具帮到了你，欢迎请作者喝杯咖啡～
+
+<p align="center">
+  <img src="docs/images/donate-wechat.png" width="200" alt="微信收款码">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img src="docs/images/donate-alipay.png" width="200" alt="支付宝收款码">
+</p>
+<p align="center">
+  <sub>微信支付 · 支付宝 &nbsp;|&nbsp; Enjoying vx-m-open? Buy the author a coffee ☕</sub>
+</p>
 
 ## 📄 许可证
 

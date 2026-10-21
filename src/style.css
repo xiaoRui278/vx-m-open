@@ -930,6 +930,45 @@ button:disabled { cursor: not-allowed; }
 
 .link-btn:hover { color: var(--accent-hover); }
 
+/* 设置页 · 支持作者 */
+.donate-group { padding: 14px 16px 16px; }
+
+.donate-lead {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 14px;
+}
+
+.donate-title { font-size: 13px; font-weight: 600; color: var(--text); }
+
+.donate-sub { font-size: 12.5px; color: var(--text-2); }
+
+.donate-qrs {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+}
+
+.donate-item {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.donate-qr {
+  width: 128px;
+  height: 128px;
+  padding: 6px;
+  border-radius: 12px;
+  border: 1px solid var(--border-strong);
+  background: #fff;
+}
+
+.donate-item figcaption { font-size: 12px; color: var(--text-2); }
+
 /* ============ Toast ============ */
 .toast {
   position: fixed;

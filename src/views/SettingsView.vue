@@ -5,6 +5,8 @@ import { locale, setLocale, t, type Locale } from "../i18n";
 import { setTheme, theme, type Theme } from "../prefs";
 import { openUrl } from "../api";
 import { isWindows as sharedIsWindows } from "../platform";
+import wechatQrImg from "../assets/donate-wechat.png";
+import alipayQrImg from "../assets/donate-alipay.png";
 
 const store = useAppStore();
 const isWindows = sharedIsWindows;
@@ -126,6 +128,24 @@ const versionText = computed(() => {
       <div class="setting-row">
         <span class="setting-key">{{ t("disclaimer") }}</span>
         <span class="setting-val">{{ t("disclaimerVal") }}</span>
+      </div>
+    </div>
+
+    <!-- 支持作者 -->
+    <div class="settings-group donate-group">
+      <div class="donate-lead">
+        <span class="donate-title">{{ t("donateTitle") }}</span>
+        <span class="donate-sub">{{ t("donateSub") }}</span>
+      </div>
+      <div class="donate-qrs">
+        <figure class="donate-item">
+          <img class="donate-qr" :src="wechatQrImg" :alt="t('donateWechat')" draggable="false" />
+          <figcaption>{{ t("donateWechat") }}</figcaption>
+        </figure>
+        <figure class="donate-item">
+          <img class="donate-qr" :src="alipayQrImg" :alt="t('donateAlipay')" draggable="false" />
+          <figcaption>{{ t("donateAlipay") }}</figcaption>
+        </figure>
       </div>
     </div>
   </div>
