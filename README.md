@@ -15,6 +15,9 @@
   <strong>跨平台微信多开与实例管理工具</strong><br>
   一个应用管理多个微信账号 —— macOS 走独立副本，Windows 走本体多开，不修改微信本体
 </p>
+<p align="center">
+  <sub><b>English:</b> Cross-platform WeChat multi-instance &amp; multi-account manager — run multiple WeChat accounts side by side on macOS &amp; Windows, without modifying WeChat itself.</sub>
+</p>
 
 ---
 
