@@ -184,11 +184,12 @@ src/                        # 前端（Vue 3 + TypeScript）
 
 如果这个工具帮到了你，欢迎请作者喝杯咖啡～
 
+| 微信支付 | 支付宝 |
+| :---: | :---: |
+| <img src="docs/images/donate-wechat.png" width="200" alt="微信收款码"> | <img src="docs/images/donate-alipay.png" width="200" alt="支付宝收款码"> |
+
 <p align="center">
-  <img src="docs/images/donate-wechat.png" width="200" alt="微信收款码">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img src="docs/images/donate-alipay.png" width="200" alt="支付宝收款码">
-</p>
-<p align="center">
-  <sub>微信支付 · 支付宝 &nbsp;|&nbsp; Enjoying vx-m-open? Buy the author a coffee ☕</sub>
+  <sub>微信扫一扫 · 支付宝扫一扫 &nbsp;|&nbsp; Enjoying vx-m-open? Buy the author a coffee ☕</sub>
 </p>
 
 ## 📄 许可证
