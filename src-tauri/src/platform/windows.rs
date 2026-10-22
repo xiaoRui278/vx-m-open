@@ -417,8 +417,8 @@ fn query_object_string(handle: HANDLE, class: i32) -> Option<String> {
     }
 }
 
-/// 尝试关闭微信进程的单实例互斥体句柄；成功返回 Ok(true)
-fn close_wechat_mutex(pid: u32) -> Result<bool, String> {
+/// 返回 (是否关闭了至少一个目标互斥体, 进程持有的 Mutant 名称样本)
+fn close_wechat_mutex(pid: u32) -> Result<(bool, Vec<String>), String> {
     let target = unsafe { OpenProcess(PROCESS_DUP_HANDLE, 0, pid) };
     if target.is_null() {
         return Err(format!("无法打开微信进程（PID {pid}）"));
@@ -428,8 +428,10 @@ fn close_wechat_mutex(pid: u32) -> Result<bool, String> {
     result
 }
 
-fn close_wechat_mutex_inner(target: HANDLE, pid: u32) -> Result<bool, String> {
+/// 返回 (是否关闭了至少一个目标互斥体, 进程持有的全部 Mutant 名称样本)
+fn close_wechat_mutex_inner(target: HANDLE, pid: u32) -> Result<(bool, Vec<String>), String> {
     let me = unsafe { GetCurrentProcess() };
+    let mut mutant_names: Vec<String> = Vec::new();
 
     // 枚举全系统句柄表（缓冲区不足时翻倍重试）
     let mut size = 1usize << 20;
@@ -481,6 +483,11 @@ fn close_wechat_mutex_inner(target: HANDLE, pid: u32) -> Result<bool, String> {
         let type_name = query_object_string(dup, OBJECT_TYPE_INFORMATION);
         if type_name.as_deref() == Some(MUTANT_TYPE_NAME) {
             let obj_name = query_object_string(dup, OBJECT_NAME_INFORMATION);
+            if let Some(n) = &obj_name {
+                if !n.is_empty() && mutant_names.len() < 8 {
+                    mutant_names.push(n.clone());
+                }
+            }
             if obj_name.is_some_and(|n| {
                 WECHAT_MUTEX_MARKS.iter().any(|mark| n.contains(mark))
             }) {
@@ -503,7 +510,7 @@ fn close_wechat_mutex_inner(target: HANDLE, pid: u32) -> Result<bool, String> {
         }
         unsafe { CloseHandle(dup) };
     }
-    Ok(closed_any)
+    Ok((closed_any, mutant_names))
 }
 
 // ---------- 启动 / 激活 / 关闭 ----------
@@ -547,11 +554,17 @@ pub fn launch(path: &str) -> PlatformResult<()> {
     // 单次枚举失败（缓冲区抖动/权限抖动）只跳过本轮，不放弃整个窗口；
     // 150ms 间隔在成功率与 CPU 开销间取平衡（互斥体在初始化早期即创建）。
     let mut last_err: Option<String> = None;
+    let mut last_names: Vec<String> = Vec::new();
     let deadline = Instant::now() + Duration::from_secs(10);
     while Instant::now() < deadline {
         match close_wechat_mutex(pid) {
-            Ok(true) => return Ok(()),
-            Ok(false) => std::thread::sleep(Duration::from_millis(150)),
+            Ok((true, _)) => return Ok(()),
+            Ok((false, names)) => {
+                if !names.is_empty() {
+                    last_names = names;
+                }
+                std::thread::sleep(Duration::from_millis(150));
+            }
             Err(e) => {
                 last_err = Some(e);
                 std::thread::sleep(Duration::from_millis(300));
@@ -572,7 +585,14 @@ pub fn launch(path: &str) -> PlatformResult<()> {
     }
     match last_err {
         Some(e) => Err(format!("启动失败：进程已退出（{e}）")),
-        None => Err("启动超时：未能解除微信单实例限制（该版本微信可能更改了内部机制）".into()),
+        None => {
+            let found = if last_names.is_empty() {
+                "未在进程中发现任何互斥体".to_string()
+            } else {
+                format!("进程互斥体：{}", last_names.join(" | "))
+            };
+            Err(format!("启动超时：未能解除微信单实例限制（{found}）"))
+        }
     }
 }
 
