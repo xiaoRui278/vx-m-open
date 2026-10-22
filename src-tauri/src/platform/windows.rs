@@ -47,7 +47,13 @@ const DUPLICATE_SAME_ACCESS: u32 = 0x0000_0002;
 const WAIT_OBJECT_0: u32 = 0;
 
 const MUTANT_TYPE_NAME: &str = "Mutant";
-const WECHAT_MUTEX_MARK: &str = "WeChat_App_Instance";
+/// 微信单实例互斥体名的候选片段：3.x 用 WeChat 前缀，4.x 可能改用 Weixin
+/// 或其它前缀，按宽松片段匹配并全部关闭
+const WECHAT_MUTEX_MARKS: [&str; 3] = [
+    "WeChat_App_Instance",
+    "Weixin_App_Instance",
+    "App_Instance_Identity_Mutex",
+];
 
 const EXE_NAMES: [&str; 2] = ["WeChat.exe", "Weixin.exe"];
 const REG_SUBKEYS: [&str; 2] = ["Software\\Tencent\\WeChat", "Software\\Tencent\\Weixin"];
@@ -372,6 +378,7 @@ fn close_wechat_mutex_inner(target: HANDLE, pid: u32) -> Result<bool, String> {
         return Err(format!("枚举系统句柄失败（NTSTATUS 0x{status:08X}）"));
     };
 
+    let mut closed_any = false;
     for e in &entries {
         if e.unique_process_id != pid as usize {
             continue;
@@ -387,7 +394,9 @@ fn close_wechat_mutex_inner(target: HANDLE, pid: u32) -> Result<bool, String> {
         let type_name = query_object_string(dup, OBJECT_TYPE_INFORMATION);
         if type_name.as_deref() == Some(MUTANT_TYPE_NAME) {
             let obj_name = query_object_string(dup, OBJECT_NAME_INFORMATION);
-            if obj_name.is_some_and(|n| n.contains(WECHAT_MUTEX_MARK)) {
+            if obj_name.is_some_and(|n| {
+                WECHAT_MUTEX_MARKS.iter().any(|mark| n.contains(mark))
+            }) {
                 // 在源进程内关闭原句柄
                 let closed = unsafe {
                     DuplicateHandle(
@@ -400,16 +409,14 @@ fn close_wechat_mutex_inner(target: HANDLE, pid: u32) -> Result<bool, String> {
                         DUPLICATE_CLOSE_SOURCE,
                     )
                 };
-                unsafe { CloseHandle(dup) };
                 if closed != 0 {
-                    return Ok(true);
+                    closed_any = true;
                 }
-                continue;
             }
         }
         unsafe { CloseHandle(dup) };
     }
-    Ok(false)
+    Ok(closed_any)
 }
 
 // ---------- 启动 / 激活 / 关闭 ----------
@@ -464,8 +471,15 @@ pub fn launch(path: &str) -> PlatformResult<()> {
             }
         }
     }
+    // 超时兜底：进程仍存活说明启动本身已成功——互斥体可能已更名、
+    // 或本次启动本就是首个实例无需解除限制，不应误报失败
+    let alive = unsafe { OpenProcess(PROCESS_SYNCHRONIZE, 0, pid) };
+    if !alive.is_null() {
+        unsafe { CloseHandle(alive) };
+        return Ok(());
+    }
     match last_err {
-        Some(e) => Err(format!("启动超时：{e}（该版本微信可能更改了内部机制）")),
+        Some(e) => Err(format!("启动失败：进程已退出（{e}）")),
         None => Err("启动超时：未能解除微信单实例限制（该版本微信可能更改了内部机制）".into()),
     }
 }
