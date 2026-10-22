@@ -22,8 +22,8 @@ use windows_sys::Win32::System::Registry::{RegGetValueW, HKEY_CURRENT_USER, RRF_
 use windows_sys::Win32::System::Threading::{
     CreateProcessW, GetCurrentProcess, OpenProcess, QueryFullProcessImageNameW, ResumeThread,
     TerminateProcess, WaitForSingleObject, CREATE_SUSPENDED, PROCESS_INFORMATION,
-    PROCESS_DUP_HANDLE, PROCESS_NAME_WIN32, PROCESS_SYNCHRONIZE, PROCESS_TERMINATE,
-    STARTUPINFOW,
+    PROCESS_DUP_HANDLE, PROCESS_NAME_WIN32, PROCESS_QUERY_LIMITED_INFORMATION,
+    PROCESS_SYNCHRONIZE, PROCESS_TERMINATE, STARTUPINFOW,
 };
 use windows_sys::Win32::UI::WindowsAndMessaging::{
     EnumWindows, GetWindowThreadProcessId, IsIconic, IsWindowVisible, PostThreadMessageW,
@@ -584,7 +584,13 @@ fn process_image_name(handle: HANDLE) -> Option<String> {
 /// 终止单个帮手进程。收割前校验 exe 名与快照一致，防止收割窗口内 pid 复用
 /// 或快照孤儿误配时误杀无关进程；进程已消失则静默跳过
 fn kill_process_hard(pid: u32, exe_name: &str) {
-    let handle = unsafe { OpenProcess(PROCESS_SYNCHRONIZE | PROCESS_TERMINATE, 0, pid) };
+    let handle = unsafe {
+        OpenProcess(
+            PROCESS_SYNCHRONIZE | PROCESS_TERMINATE | PROCESS_QUERY_LIMITED_INFORMATION,
+            0,
+            pid,
+        )
+    };
     if handle.is_null() {
         return; // 已不存在
     }
