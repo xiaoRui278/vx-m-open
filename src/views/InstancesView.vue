@@ -339,7 +339,7 @@ const anyDialogOpen = computed(
         <h2 class="section-label">{{ t("copiesLabel") }}（{{ store.targets.length }}）</h2>
         <article
           v-for="x in store.targets"
-          :key="x.isMain ? x.path : `${x.path}#${x.pid ?? 'idle'}`"
+          :key="x.path"
           class="instance"
           :data-state="x.running ? 'running' : x.outdated ? 'outdated' : 'stopped'"
         >

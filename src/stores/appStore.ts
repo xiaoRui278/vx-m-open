@@ -5,6 +5,7 @@ import { t } from "../i18n";
 import type { LaunchTarget, WeChatInfo } from "../types";
 
 let pollTimer: ReturnType<typeof setInterval> | null = null;
+let visBound = false;
 
 export const GITHUB_URL = "https://github.com/xiaoRui278/vx-m-open";
 export const SITE_URL = "https://vxmo.cting.vip";
@@ -123,8 +124,16 @@ export const useAppStore = defineStore("app", {
       void this.initVersion();
       if (pollTimer) clearInterval(pollTimer);
       pollTimer = setInterval(() => {
+        // 窗口不可见时暂停轮询（Tauri 最小化/遮挡时 webview 不可见）
+        if (document.visibilityState !== "visible") return;
         if (!this.busy) void this.refreshAll();
       }, 3000);
+      if (!visBound) {
+        visBound = true;
+        document.addEventListener("visibilitychange", () => {
+          if (document.visibilityState === "visible") void this.refreshAll();
+        });
+      }
     },
   },
 });
