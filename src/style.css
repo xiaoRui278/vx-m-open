@@ -956,18 +956,19 @@ button:disabled { cursor: not-allowed; }
 
 .link-btn:hover { color: var(--accent-hover); }
 
-/* 设置页 · 支持作者入口（图标与文字光学居中：span 转 inline-flex，svg 转 block 消除基线缝隙） */
-.donate-btn-icon {
-  display: inline-flex;
-  vertical-align: -2px;
-  margin-right: 4px;
+/* 设置页 · 支持作者 */
+.donate-group { padding: 14px 16px 16px; }
+
+.donate-lead {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 14px;
 }
 
-.donate-btn-icon svg {
-  width: 14px;
-  height: 14px;
-  display: block;
-}
+.donate-title { font-size: 13px; font-weight: 600; color: var(--text); }
+
+.donate-sub { font-size: 12.5px; color: var(--text-2); }
 
 .donate-qrs {
   display: flex;
