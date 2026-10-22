@@ -9,7 +9,7 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use sysinfo::{Pid, ProcessesToUpdate, Signal, System};
+use sysinfo::{Pid, ProcessRefreshKind, ProcessesToUpdate, Signal, System, UpdateKind};
 
 use super::{LaunchTarget, WeChatInfo};
 
@@ -100,9 +100,13 @@ fn running_state(
 
 /// 列出所有可管理目标（主程序 + 副本），并合并运行状态
 pub fn launch_targets(main_alias: Option<&str>) -> PlatformResult<Vec<LaunchTarget>> {
-    // 只刷新进程基本信息（name/exe/start_time），避免 new_all 全量枚举的额外开销
+    // 只刷新所需进程信息（exe/start_time 自动填充），避免 new_all 全量枚举的额外开销
     let mut sys = System::new();
-    sys.refresh_processes(ProcessesToUpdate::All, true);
+    sys.refresh_processes_specifics(
+        ProcessesToUpdate::All,
+        true,
+        ProcessRefreshKind::nothing().with_exe(UpdateKind::OnlyIfNotSet),
+    );
     let running = running_map(&sys);
     let mut targets = Vec::new();
 
@@ -342,7 +346,11 @@ fn ensure_copy(app: &Path) -> PlatformResult<String> {
 fn is_running(app: &Path) -> bool {
     let path_str = app.to_string_lossy().into_owned();
     let mut sys = System::new();
-    sys.refresh_processes(ProcessesToUpdate::All, true);
+    sys.refresh_processes_specifics(
+        ProcessesToUpdate::All,
+        true,
+        ProcessRefreshKind::nothing().with_exe(UpdateKind::OnlyIfNotSet),
+    );
     running_map(&sys).contains_key(&path_str)
 }
 
