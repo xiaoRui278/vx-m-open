@@ -29,8 +29,8 @@ const checkResult = ref<"" | "ok" | "new" | "fail">("");
 async function checkUpdate() {
   checking.value = true;
   checkResult.value = "";
-  const hasNew = await store.checkUpdate();
-  checkResult.value = hasNew ? "new" : "ok";
+  const result = await store.checkUpdate();
+  checkResult.value = result;
   checking.value = false;
 }
 

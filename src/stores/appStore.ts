@@ -105,15 +105,17 @@ export const useAppStore = defineStore("app", {
       }
       await this.checkUpdate();
     },
-    async checkUpdate(): Promise<boolean> {
-      const latest = await fetchLatestVersion();
-      if (latest && isNewer(latest, this.appVersion)) {
-        this.updateVersion = latest;
+    /** 返回 "ok"（已是最新）/ "new"（有新版）/ "fail"（网络检查失败） */
+    async checkUpdate(): Promise<"ok" | "new" | "fail"> {
+      const { version, failed } = await fetchLatestVersion();
+      if (failed) return "fail";
+      if (version && isNewer(version, this.appVersion)) {
+        this.updateVersion = version;
         this.updateAvailable = true;
-        return true;
+        return "new";
       }
       this.updateAvailable = false;
-      return false;
+      return "ok";
     },
     init() {
       void this.refreshAll();
@@ -126,28 +128,44 @@ export const useAppStore = defineStore("app", {
   },
 });
 
-/** 取最新版本号：官网 latest.json 优先，GitHub Release 兜底 */
-async function fetchLatestVersion(): Promise<string> {
+/** fetch + 超时中断（AbortSignal.timeout 在 macOS 11 的 WKWebView 不可用，手动实现） */
+async function fetchWithTimeout(url: string, init: RequestInit, ms: number): Promise<Response> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), ms);
   try {
-    const res = await fetch(`${SITE_URL}/latest.json`, { cache: "no-store" });
+    return await fetch(url, { ...init, signal: ctrl.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** 取最新版本号：官网 latest.json 优先，GitHub Release 兜底；全部失败返回 failed: true */
+async function fetchLatestVersion(): Promise<{ version: string; failed: boolean }> {
+  try {
+    const res = await fetchWithTimeout(
+      `${SITE_URL}/latest.json`,
+      { cache: "no-store" },
+      5000,
+    );
     if (res.ok) {
       const data = (await res.json()) as { version?: string };
       const version = (data.version ?? "").trim();
-      if (version) return version;
+      if (version) return { version, failed: false };
     }
   } catch {
-    /* 官网未放开跨域时静默转兜底 */
+    /* 官网未放开跨域或超时，静默转兜底 */
   }
   try {
-    const res = await fetch(
+    const res = await fetchWithTimeout(
       `${GITHUB_URL.replace("github.com", "api.github.com/repos")}/releases/latest`,
       { headers: { Accept: "application/vnd.github+json" } },
+      5000,
     );
-    if (!res.ok) return "";
+    if (!res.ok) return { version: "", failed: true };
     const data = (await res.json()) as { tag_name?: string };
-    return (data.tag_name ?? "").replace(/^v/, "");
+    return { version: (data.tag_name ?? "").replace(/^v/, ""), failed: false };
   } catch {
-    return "";
+    return { version: "", failed: true };
   }
 }
 
