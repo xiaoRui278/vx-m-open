@@ -53,7 +53,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build and upload to draft release
-        # 只有 tag push 才创建 Release；手动触发仅构建，产物走下面的 Artifacts
+        # 只有 tag push 才走 tauri-action（构建 + 创建 Release）
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
         uses: tauri-apps/tauri-action@v0
         env:
@@ -65,6 +65,11 @@ jobs:
           releaseBody: "请按平台下载安装包。macOS 为通用二进制（Apple Silicon / Intel 均可用），Windows 为 64 位安装包。"
           releaseDraft: false
           prerelease: false
+
+      # 手动触发：只构建不发布，产物走下面的 Artifacts
+      - name: Build (manual, no release)
+        if: github.event_name == 'workflow_dispatch'
+        run: pnpm tauri build ${{ matrix.args }}
 
       # 仅手动触发时把安装包挂到本次 run 的 Artifacts，方便下载验证
       - name: Upload macOS artifacts
