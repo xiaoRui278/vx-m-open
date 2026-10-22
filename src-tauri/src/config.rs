@@ -28,12 +28,18 @@ pub fn main_alias(app: &tauri::AppHandle) -> Result<Option<String>, String> {
 }
 
 pub fn set_main_alias(app: &tauri::AppHandle, name: &str) -> Result<(), String> {
+    let trimmed = name.trim();
+    // "WeChat" 是后端「无备注」的标记值（前端按此映射 i18n 显示名），
+    // 用户设置同名备注会与标记值混淆，故拒绝（大小写不敏感）
+    if trimmed.eq_ignore_ascii_case("WeChat") {
+        return Err("备注名不能为 WeChat，会与主程序默认显示名冲突".into());
+    }
     let file = config_file(app)?;
     if let Some(parent) = file.parent() {
         fs::create_dir_all(parent).map_err(|e| format!("创建配置目录失败：{e}"))?;
     }
     let aliases = Aliases {
-        main: Some(name.trim().to_string()),
+        main: Some(trimmed.to_string()),
     };
     let json = serde_json::to_string(&aliases).map_err(|e| e.to_string())?;
     fs::write(&file, json).map_err(|e| format!("写入配置失败：{e}"))
