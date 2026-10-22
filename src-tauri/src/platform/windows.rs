@@ -15,7 +15,8 @@ use windows_sys::Win32::Foundation::{
     CloseHandle, DuplicateHandle, GetLastError, HANDLE, INVALID_HANDLE_VALUE,
 };
 use windows_sys::Win32::System::Diagnostics::ToolHelp::{
-    CreateToolhelp32Snapshot, Thread32First, Thread32Next, TH32CS_SNAPTHREAD, THREADENTRY32,
+    CreateToolhelp32Snapshot, Process32FirstW, Process32NextW, Thread32First, Thread32Next,
+    TH32CS_SNAPPROCESS, TH32CS_SNAPTHREAD, PROCESSENTRY32W, THREADENTRY32,
 };
 use windows_sys::Win32::System::Registry::{RegGetValueW, HKEY_CURRENT_USER, RRF_RT_REG_SZ};
 use windows_sys::Win32::System::Threading::{
@@ -515,22 +516,82 @@ fn main_thread_id(pid: u32) -> Option<u32> {
     result
 }
 
-/// 先 WM_QUIT 优雅退出，2 秒未退出再强制结束
+/// 快照 pid 的全部后代进程（BFS 遍历父→子映射）。
+/// 必须在主进程退出前调用：主进程死后子进程被系统收养，父指针失效无法再定位。
+fn descendant_pids(pid: u32) -> Vec<u32> {
+    let snap = unsafe { CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0) };
+    if snap == INVALID_HANDLE_VALUE {
+        return Vec::new();
+    }
+    let mut procs: Vec<(u32, u32)> = Vec::new(); // (pid, parent_pid)
+    let mut entry: PROCESSENTRY32W = unsafe { std::mem::zeroed() };
+    entry.dwSize = std::mem::size_of::<PROCESSENTRY32W>() as u32;
+    unsafe {
+        if Process32FirstW(snap, &mut entry) != 0 {
+            loop {
+                procs.push((entry.th32ProcessID, entry.th32ParentProcessID));
+                if Process32NextW(snap, &mut entry) == 0 {
+                    break;
+                }
+            }
+        }
+        CloseHandle(snap);
+    }
+    let mut result = Vec::new();
+    let mut queue = vec![pid];
+    let mut i = 0;
+    while i < queue.len() {
+        let cur = queue[i];
+        i += 1;
+        for &(p, parent) in &procs {
+            if parent == cur && p != 0 && !queue.contains(&p) {
+                queue.push(p);
+                if p != pid {
+                    result.push(p);
+                }
+            }
+        }
+    }
+    result
+}
+
+/// 终止单个进程（帮手子进程无需优雅退出，直接强杀；进程已消失则静默跳过）
+fn kill_process_hard(pid: u32) {
+    let handle = unsafe { OpenProcess(PROCESS_SYNCHRONIZE | PROCESS_TERMINATE, 0, pid) };
+    if handle.is_null() {
+        return; // 已不存在
+    }
+    // 给 200ms 自然退出机会，未退出则强杀
+    if unsafe { WaitForSingleObject(handle, 200) } != WAIT_OBJECT_0 {
+        unsafe {
+            TerminateProcess(handle, 1);
+            let _ = WaitForSingleObject(handle, 2000);
+        }
+    }
+    unsafe { CloseHandle(handle) };
+}
+
+/// 先 WM_QUIT 优雅退出主进程，2 秒未退出再强制结束；随后收割残留的帮手子进程
 pub fn terminate(pid: u32) -> PlatformResult<()> {
+    // 必须在主进程退出前快照子进程树，死后父指针失效
+    let children = descendant_pids(pid);
     if let Some(tid) = main_thread_id(pid) {
         unsafe { PostThreadMessageW(tid, WM_QUIT, 0, 0) };
     }
     let handle = unsafe { OpenProcess(PROCESS_SYNCHRONIZE | PROCESS_TERMINATE, 0, pid) };
-    if handle.is_null() {
-        return Ok(()); // 进程已不存在
-    }
-    if unsafe { WaitForSingleObject(handle, 2000) } != WAIT_OBJECT_0 {
-        unsafe {
-            TerminateProcess(handle, 1);
-            let _ = WaitForSingleObject(handle, 3000);
+    if !handle.is_null() {
+        if unsafe { WaitForSingleObject(handle, 2000) } != WAIT_OBJECT_0 {
+            unsafe {
+                TerminateProcess(handle, 1);
+                let _ = WaitForSingleObject(handle, 3000);
+            }
         }
+        unsafe { CloseHandle(handle) };
     }
-    unsafe { CloseHandle(handle) };
+    // 正常退出时微信会自己带走帮手，此处只兜底收割残留者
+    for child in children {
+        kill_process_hard(child);
+    }
     Ok(())
 }
 
