@@ -35,6 +35,23 @@ use windows_sys::Wdk::System::SystemInformation::NtQuerySystemInformation;
 
 use super::{LaunchTarget, WeChatInfo};
 
+// version.dll 的文件版本查询 API（windows-sys 未覆盖，手动链接）
+extern "system" {
+    fn GetFileVersionInfoSizeW(lptstr_filename: *const u16, lpdw_handle: *mut u32) -> u32;
+    fn GetFileVersionInfoW(
+        lptstr_filename: *const u16,
+        dw_handle: u32,
+        dw_len: u32,
+        lp_data: *mut c_void,
+    ) -> i32;
+    fn VerQueryValueW(
+        p_block: *const c_void,
+        lp_sub_block: *const u16,
+        lp_buffer: *mut *mut c_void,
+        pu_len: *mut u32,
+    ) -> i32;
+}
+
 type PlatformResult<T> = Result<T, String>;
 
 // ---- NT 常量（windows-sys 未导出的句柄表结构与常量，自定义） ----
@@ -154,11 +171,77 @@ fn find_exe(dir: &str) -> Option<(PathBuf, String)> {
     None
 }
 
+/// 读取 exe 的文件版本元数据（VS_FIXEDFILEINFO 的 ProductVersion），失败返回 None
+fn exe_file_version(path: &Path) -> Option<String> {
+    let wide = to_wide(&path.to_string_lossy());
+    unsafe {
+        let mut handle: u32 = 0;
+        let size = GetFileVersionInfoSizeW(wide.as_ptr(), &mut handle);
+        if size == 0 {
+            return None;
+        }
+        let mut data = vec![0u8; size as usize];
+        if GetFileVersionInfoW(wide.as_ptr(), 0, size, data.as_mut_ptr() as *mut c_void) == 0 {
+            return None;
+        }
+        let mut info: *mut c_void = std::ptr::null_mut();
+        let mut len: u32 = 0;
+        if VerQueryValueW(
+            data.as_mut_ptr() as *const c_void,
+            to_wide("\\").as_ptr(),
+            &mut info,
+            &mut len,
+        ) == 0
+            || info.is_null()
+        {
+            return None;
+        }
+        #[repr(C)]
+        struct FixedFileInfo {
+            signature: u32,
+            struc_version: u32,
+            file_version_ms: u32,
+            file_version_ls: u32,
+            product_version_ms: u32,
+            product_version_ls: u32,
+        }
+        let ffi = &*(info as *const FixedFileInfo);
+        // 0xFEEF04BD 是 VS_FIXEDFILEINFO 的固定签名
+        if ffi.signature != 0xFEEF_04BD {
+            return None;
+        }
+        let v = ffi.product_version_ms;
+        let l = ffi.product_version_ls;
+        Some(format!("{}.{}.{}.{}", v >> 16, v & 0xFFFF, l >> 16, l & 0xFFFF))
+    }
+}
+
+/// exe 版本读取有 IO 开销，detect 每 3 秒被轮询调用，按 exe 路径缓存结果
+static EXE_VERSION_CACHE: std::sync::Mutex<Option<(String, Option<String>)>> =
+    std::sync::Mutex::new(None);
+
+fn exe_version_cached(exe: &str) -> Option<String> {
+    let mut cache = EXE_VERSION_CACHE.lock().unwrap();
+    match &*cache {
+        Some((p, v)) if p == exe => v.clone(),
+        _ => {
+            let v = exe_file_version(Path::new(exe));
+            *cache = Some((exe.to_string(), v.clone()));
+            v
+        }
+    }
+}
+
 fn build_info(exe: PathBuf, version: String) -> WeChatInfo {
+    // 目录名版本缺失时兜底读 exe 文件元数据（微信 exe 一定带 ProductVersion）
+    let version = match version {
+        v if !v.is_empty() => Some(v),
+        _ => exe_version_cached(exe.to_string_lossy().as_ref()),
+    };
     WeChatInfo {
         installed: true,
         path: Some(exe.to_string_lossy().into_owned()),
-        version: if version.is_empty() { None } else { Some(version) },
+        version,
         bundle_id: None,
     }
 }
