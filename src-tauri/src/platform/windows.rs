@@ -441,15 +441,22 @@ pub fn launch(path: &str) -> PlatformResult<()> {
     // 微信在初始化早期创建单实例互斥体，10 秒窗口内轮询关闭。
     // 单次枚举失败（缓冲区抖动/权限抖动）只跳过本轮，不放弃整个窗口；
     // 150ms 间隔在成功率与 CPU 开销间取平衡（互斥体在初始化早期即创建）。
+    let mut last_err: Option<String> = None;
     let deadline = Instant::now() + Duration::from_secs(10);
     while Instant::now() < deadline {
         match close_wechat_mutex(pid) {
             Ok(true) => return Ok(()),
             Ok(false) => std::thread::sleep(Duration::from_millis(150)),
-            Err(_) => std::thread::sleep(Duration::from_millis(300)),
+            Err(e) => {
+                last_err = Some(e);
+                std::thread::sleep(Duration::from_millis(300));
+            }
         }
     }
-    Err("启动超时：未能解除微信单实例限制（该版本微信可能更改了内部机制）".into())
+    match last_err {
+        Some(e) => Err(format!("启动超时：{e}（该版本微信可能更改了内部机制）")),
+        None => Err("启动超时：未能解除微信单实例限制（该版本微信可能更改了内部机制）".into()),
+    }
 }
 
 unsafe extern "system" fn enum_proc(hwnd: HANDLE, lparam: isize) -> i32 {
