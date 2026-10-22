@@ -153,3 +153,20 @@ pub async fn rebuild_copy(path: String) -> Result<(), String> {
 pub async fn set_main_alias(app: AppHandle, name: String) -> Result<(), String> {
     run_blocking(move || config::set_main_alias(&app, &name)).await
 }
+
+#[tauri::command]
+pub async fn list_instance_remarks(
+    app: AppHandle,
+) -> Result<Vec<config::InstanceRemark>, String> {
+    run_blocking(move || config::list_instance_remarks(&app)).await
+}
+
+#[tauri::command]
+pub async fn set_instance_remark(
+    app: AppHandle,
+    pid: u32,
+    started_at: u64,
+    remark: String,
+) -> Result<(), String> {
+    run_blocking(move || config::set_instance_remark(&app, pid, started_at, &remark)).await
+}

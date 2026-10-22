@@ -16,6 +16,8 @@ pub fn run() {
             commands::rebuild_copy,
             commands::rebuild_all,
             commands::set_main_alias,
+            commands::list_instance_remarks,
+            commands::set_instance_remark,
             commands::open_url,
         ])
         .setup(|app| {

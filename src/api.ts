@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { LaunchTarget, WeChatInfo } from "./types";
+import type { InstanceRemark, LaunchTarget, WeChatInfo } from "./types";
 
 /* —— 浏览器预览夹具（pnpm dev 用普通浏览器直接查看 UI；Tauri 内零影响）—— */
 const inTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
@@ -61,6 +61,8 @@ async function previewInvoke<T>(cmd: string): Promise<T> {
       return MOCK_TARGETS as T;
     case "rebuild_all":
       return 2 as T;
+    case "list_instance_remarks":
+      return [] as T;
     default:
       return undefined as T;
   }
@@ -95,6 +97,12 @@ export const rebuildCopy = (path: string) => call<void>("rebuild_copy", { path }
 
 export const setMainAlias = (name: string) =>
   call<void>("set_main_alias", { name });
+
+export const listInstanceRemarks = () =>
+  call<InstanceRemark[]>("list_instance_remarks");
+
+export const setInstanceRemark = (pid: number, startedAt: number, remark: string) =>
+  call<void>("set_instance_remark", { pid, startedAt, remark });
 
 export const rebuildAll = () => call<number>("rebuild_all");
 

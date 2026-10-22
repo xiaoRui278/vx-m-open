@@ -17,7 +17,7 @@ const isWindows = sharedIsWindows;
 
 // ================= 弹框（创建 / 改名 / 删除 / 重建确认） =================
 const showModal = ref(false);
-const modalMode = ref<"create" | "rename" | "delete" | "rebuild" | "rebuildall">("create");
+const modalMode = ref<"create" | "rename" | "instance-remark" | "delete" | "rebuild" | "rebuildall">("create");
 const renameTarget = ref<LaunchTarget | null>(null);
 const confirmTarget = ref<LaunchTarget | null>(null);
 const isMainRename = ref(false);
@@ -38,6 +38,8 @@ const modalTitle = computed(() => {
       return t("deleteTitle", { name: confirmTarget.value?.label ?? "" });
     case "rebuild":
       return t("rebuildTitle", { name: confirmTarget.value?.label ?? "" });
+    case "instance-remark":
+      return t("instanceRemarkTitle");
     default:
       return isMainRename.value ? t("aliasTitle") : t("renameTitle", { name: renameTarget.value?.label ?? "" });
   }
@@ -53,6 +55,8 @@ const modalHint = computed(() => {
       return t("deleteHint");
     case "rebuild":
       return t("rebuildHint");
+    case "instance-remark":
+      return t("instanceRemarkHint");
     default:
       return isMainRename.value ? t("aliasHint") : t("renameHint");
   }
@@ -84,6 +88,8 @@ const confirmLabel = computed(() => {
       return t("rebuild");
     case "rename":
       return t("save");
+    case "instance-remark":
+      return t("saveRemark");
     default:
       return t("saveRemark");
   }
@@ -108,6 +114,16 @@ function openRename(x: LaunchTarget) {
   confirmTarget.value = null;
   isMainRename.value = x.isMain;
   nameInput.value = x.label;
+  showModal.value = true;
+}
+
+/** 打开 Windows 实例备注弹框（跟随进程，pid + 启动时间匹配） */
+function openInstanceRemark(x: LaunchTarget) {
+  modalMode.value = "instance-remark";
+  renameTarget.value = x;
+  confirmTarget.value = null;
+  isMainRename.value = false;
+  nameInput.value = instanceDisplayName(x) ?? "";
   showModal.value = true;
 }
 
@@ -153,6 +169,12 @@ async function confirmModal() {
         showModal.value = false;
         await runCreateProgress(name);
         return;
+      } else if (modalMode.value === "instance-remark" && renameTarget.value?.pid != null && renameTarget.value.startedAt != null) {
+        await store.setInstanceRemark(
+          renameTarget.value.pid,
+          renameTarget.value.startedAt,
+          name,
+        );
       } else if (isMainRename.value) {
         await store.setMainAlias(name);
       } else if (renameTarget.value) {
@@ -264,6 +286,15 @@ onUnmounted(() => {
 /** 主程序默认 label 为后端标记值 "WeChat"，按界面语言映射；备注名原样显示 */
 function displayName(x: LaunchTarget): string {
   return x.isMain && x.label === "WeChat" ? t("wechat") : x.label;
+}
+
+/** Windows 实例备注：按 pid + 启动时间匹配，跟随进程 */
+function instanceDisplayName(x: LaunchTarget): string | null {
+  return (
+    store.instanceRemarks.find(
+      (r) => r.pid === x.pid && r.startedAt === x.startedAt,
+    )?.remark ?? null
+  );
 }
 
 function closeTarget(x: LaunchTarget) {
@@ -435,9 +466,6 @@ const anyDialogOpen = computed(
             <span v-else aria-hidden="true" v-html="icons.play"></span>
             {{ store.busy ? t("launching") : t("launchNew") }}
           </button>
-          <button class="btn sm" :disabled="store.busy || anyDialogOpen" @click="openRename(mainTarget)">
-            <span aria-hidden="true" v-html="icons.pencil"></span>{{ t("remark") }}
-          </button>
         </div>
       </div>
 
@@ -448,7 +476,7 @@ const anyDialogOpen = computed(
         <article v-for="(x, i) in winInstances" :key="x.pid ?? i" class="instance-row">
           <div class="instance-badge" aria-hidden="true">{{ i + 1 }}</div>
           <div class="row-fill">
-            <div class="instance-name">{{ t("instance") }} {{ i + 1 }}</div>
+            <div class="instance-name">{{ instanceDisplayName(x) ?? `${t("instance")} ${i + 1}` }}</div>
             <div class="instance-meta">
               <span v-if="x.pid" class="meta-pid">PID {{ x.pid }}</span>
               <span v-if="x.pid && x.startedAt" class="dot-sep">·</span>
@@ -456,6 +484,9 @@ const anyDialogOpen = computed(
             </div>
           </div>
           <div class="actions">
+            <button class="btn sm" :disabled="store.busy || anyDialogOpen" @click="openInstanceRemark(x)">
+              <span aria-hidden="true" v-html="icons.pencil"></span>{{ t("remark") }}
+            </button>
             <button class="btn sm" :disabled="store.busy || anyDialogOpen" @click="store.activate(x.path, x.pid)">
               <span aria-hidden="true" v-html="icons.target"></span>{{ t("activate") }}
             </button>
@@ -488,7 +519,7 @@ const anyDialogOpen = computed(
         class="dialog-input"
         maxlength="36"
         :disabled="submitting"
-        :placeholder="isMainRename ? t('remarkPlaceholder') : t('createPlaceholder')"
+        :placeholder="isMainRename || modalMode === 'instance-remark' ? t('remarkPlaceholder') : t('createPlaceholder')"
         @keyup.enter="confirmModal"
       />
       <div class="dialog-actions">

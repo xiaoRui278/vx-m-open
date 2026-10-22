@@ -2,7 +2,7 @@ import { defineStore } from "pinia";
 import { getVersion } from "@tauri-apps/api/app";
 import * as api from "../api";
 import { t } from "../i18n";
-import type { LaunchTarget, WeChatInfo } from "../types";
+import type { InstanceRemark, LaunchTarget, WeChatInfo } from "../types";
 
 let pollTimer: ReturnType<typeof setInterval> | null = null;
 let visBound = false;
@@ -15,6 +15,7 @@ export const useAppStore = defineStore("app", {
   state: () => ({
     info: null as WeChatInfo | null,
     targets: [] as LaunchTarget[],
+    instanceRemarks: [] as InstanceRemark[],
     busy: false,
     busyText: "",
     message: "",
@@ -27,12 +28,14 @@ export const useAppStore = defineStore("app", {
   actions: {
     async refreshAll() {
       try {
-        const [info, targets] = await Promise.all([
+        const [info, targets, remarks] = await Promise.all([
           api.detectWechat(),
           api.listLaunchTargets(),
+          api.listInstanceRemarks(),
         ]);
         this.info = info;
         this.targets = targets;
+        this.instanceRemarks = remarks;
       } catch (e) {
         this.showMessage(String(e), "error");
       }
@@ -96,6 +99,12 @@ export const useAppStore = defineStore("app", {
     async setMainAlias(name: string) {
       await this.runLong(t("saving"), async () => {
         await api.setMainAlias(name);
+      });
+    },
+    /** 设置 Windows 实例备注（跟随进程，进程关闭即失效） */
+    async setInstanceRemark(pid: number, startedAt: number, remark: string) {
+      await this.runLong(t("saving"), async () => {
+        await api.setInstanceRemark(pid, startedAt, remark);
       });
     },
     /** 启动时读取应用版本并检查官网最新版本 */

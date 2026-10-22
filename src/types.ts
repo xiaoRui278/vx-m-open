@@ -21,3 +21,10 @@ export interface LaunchTarget {
   /** 运行实例数（Windows 主程序多开时 > 1；macOS 恒为 0 或 1） */
   instanceCount: number;
 }
+
+/** Windows 运行实例的临时备注（按 pid + 启动时间匹配，进程关闭即失效） */
+export interface InstanceRemark {
+  pid: number;
+  startedAt: number;
+  remark: string;
+}
