@@ -7,6 +7,7 @@ import type { LaunchTarget, WeChatInfo } from "../types";
 let pollTimer: ReturnType<typeof setInterval> | null = null;
 
 export const GITHUB_URL = "https://github.com/xiaoRui278/vx-m-open";
+export const SITE_URL = "https://vxmo.cting.vip";
 
 export const useAppStore = defineStore("app", {
   state: () => ({
@@ -95,7 +96,7 @@ export const useAppStore = defineStore("app", {
         await api.setMainAlias(name);
       });
     },
-    /** 启动时读取应用版本并检查 GitHub 最新 Release */
+    /** 启动时读取应用版本并检查官网最新版本 */
     async initVersion() {
       try {
         this.appVersion = await getVersion();
@@ -105,24 +106,14 @@ export const useAppStore = defineStore("app", {
       await this.checkUpdate();
     },
     async checkUpdate(): Promise<boolean> {
-      try {
-        const res = await fetch(
-          `${GITHUB_URL.replace("github.com", "api.github.com/repos")}/releases/latest`,
-          { headers: { Accept: "application/vnd.github+json" } },
-        );
-        if (!res.ok) return false;
-        const data = (await res.json()) as { tag_name?: string };
-        const latest = (data.tag_name ?? "").replace(/^v/, "");
-        if (latest && isNewer(latest, this.appVersion)) {
-          this.updateVersion = latest;
-          this.updateAvailable = true;
-          return true;
-        }
-        this.updateAvailable = false;
-        return false;
-      } catch {
-        return false;
+      const latest = await fetchLatestVersion();
+      if (latest && isNewer(latest, this.appVersion)) {
+        this.updateVersion = latest;
+        this.updateAvailable = true;
+        return true;
       }
+      this.updateAvailable = false;
+      return false;
     },
     init() {
       void this.refreshAll();
@@ -134,6 +125,31 @@ export const useAppStore = defineStore("app", {
     },
   },
 });
+
+/** 取最新版本号：官网 latest.json 优先，GitHub Release 兜底 */
+async function fetchLatestVersion(): Promise<string> {
+  try {
+    const res = await fetch(`${SITE_URL}/latest.json`, { cache: "no-store" });
+    if (res.ok) {
+      const data = (await res.json()) as { version?: string };
+      const version = (data.version ?? "").trim();
+      if (version) return version;
+    }
+  } catch {
+    /* 官网未放开跨域时静默转兜底 */
+  }
+  try {
+    const res = await fetch(
+      `${GITHUB_URL.replace("github.com", "api.github.com/repos")}/releases/latest`,
+      { headers: { Accept: "application/vnd.github+json" } },
+    );
+    if (!res.ok) return "";
+    const data = (await res.json()) as { tag_name?: string };
+    return (data.tag_name ?? "").replace(/^v/, "");
+  } catch {
+    return "";
+  }
+}
 
 /** 语义化版本比较：a > b 返回 true */
 function isNewer(a: string, b: string): boolean {

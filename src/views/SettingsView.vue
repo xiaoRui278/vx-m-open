@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { useAppStore, GITHUB_URL } from "../stores/appStore";
+import { useAppStore, SITE_URL } from "../stores/appStore";
 import { locale, setLocale, t, type Locale } from "../i18n";
 import { setTheme, theme, type Theme } from "../prefs";
 import { openUrl } from "../api";
@@ -34,12 +34,8 @@ async function checkUpdate() {
   checking.value = false;
 }
 
-function openGitHub() {
-  void openUrl(GITHUB_URL);
-}
-
-function openReleasePage() {
-  void openUrl(`${GITHUB_URL}/releases/latest`);
+function openSite() {
+  void openUrl(SITE_URL);
 }
 
 const versionText = computed(() => {
@@ -106,7 +102,7 @@ const versionText = computed(() => {
           <template v-if="checking"><span class="spinner" style="display: inline-block; vertical-align: -2px"></span> {{ t("checking") }}</template>
           <template v-else-if="store.updateAvailable">
             {{ t("updateAvailable", { version: store.updateVersion }) }}
-            <button class="btn sm" style="margin-left: 8px" @click="openReleasePage">{{ t("updateDownload") }}</button>
+            <button class="btn sm" style="margin-left: 8px" @click="openSite">{{ t("updateDownload") }}</button>
           </template>
           <template v-else-if="checkResult === 'ok'">{{ t("upToDate") }}</template>
           <template v-else-if="checkResult === 'fail'">{{ t("checkFailed") }}</template>
@@ -116,9 +112,9 @@ const versionText = computed(() => {
         </span>
       </div>
       <div class="setting-row">
-        <span class="setting-key">{{ t("github") }}</span>
+        <span class="setting-key">{{ t("website") }}</span>
         <span class="setting-val">
-          <button class="link-btn" @click="openGitHub">{{ GITHUB_URL }}</button>
+          <button class="link-btn" @click="openSite">{{ SITE_URL }}</button>
         </span>
       </div>
       <div class="setting-row">

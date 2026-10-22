@@ -19,6 +19,10 @@
   <sub><b>English:</b> Cross-platform WeChat multi-instance &amp; multi-account manager — run multiple WeChat accounts side by side on macOS &amp; Windows, without modifying WeChat itself.</sub>
 </p>
 
+<p align="center">
+  <b>🌐 官网 / Website：<a href="https://vxmo.cting.vip/">vxmo.cting.vip</a></b>
+</p>
+
 ---
 
 ## ✨ 功能特点
@@ -31,7 +35,7 @@
 - 🏷️ **备注与改名** — 副本改名同步系统显示名，主程序支持工具内备注名
 - 🌐 **中英双语** — 界面跟随系统语言，可在设置中手动切换
 - 🌗 **明暗主题** — 亮色 / 暗色 / 跟随系统
-- 🔔 **新版本提醒** — 启动时自动检查 GitHub Release，有新版提示前往下载
+- 🔔 **新版本提醒** — 启动时自动检查官网版本信息（GitHub Release 兜底），有新版提示前往[官网](https://vxmo.cting.vip/)下载
 
 ## 📸 界面预览
 
@@ -72,10 +76,13 @@
 
 #### 方式一：下载安装包（推荐）
 
-1. 前往 [Releases](https://github.com/xiaoRui278/vx-m-open/releases) 下载对应平台安装包：
+最简单的方式是打开官网 [vxmo.cting.vip](https://vxmo.cting.vip/)，页面会自动识别你的平台给出对应安装包。
+
+也可以前往 [Releases](https://github.com/xiaoRui278/vx-m-open/releases) 手动选择：
    - macOS：`vx-m-open_*_universal.dmg`（Intel 与 Apple Silicon 通用）
    - Windows：`vx-m-open_*_x64-setup.exe`（NSIS）或 `*.msi`
-2. macOS 将应用拖入「应用程序」；Windows 按向导安装
+
+安装：macOS 将应用拖入「应用程序」；Windows 按向导安装。
 
 > 💡 也可以在 [Actions](https://github.com/xiaoRui278/vx-m-open/actions) 页面每次构建的 Artifacts 中下载最新构建产物。
 
@@ -155,6 +162,12 @@ src/                        # 前端（Vue 3 + TypeScript）
 - [ ] M6 Homebrew / Scoop 分发、应用内自动更新
 
 ## 📝 更新日志
+
+### v1.0.1 (2026-10-22)
+- 🌐 版本检测改走官网 `vxmo.cting.vip` 的发布信息，国内访问更快，GitHub Release 作为兜底
+- 🔗 设置页「GitHub」一行替换为官网地址，GitHub 收进侧边栏底部的图标按钮
+- 🔔 「前往下载」与更新提示统一指向官网下载页
+- 📄 README 顶部补充官网入口，安装方式改为官网优先
 
 ### v1.0.0 (2026-10-21)
 - 🎉 首个正式版本

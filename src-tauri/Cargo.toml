@@ -1,6 +1,6 @@
 [package]
 name = "vx-m-open"
-version = "1.0.0"
+version = "1.0.1"
 description = "Cross-platform WeChat multi-instance launcher"
 edition = "2021"
 

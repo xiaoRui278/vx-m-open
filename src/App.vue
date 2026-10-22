@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { useAppStore, GITHUB_URL } from "./stores/appStore";
+import { useAppStore, GITHUB_URL, SITE_URL } from "./stores/appStore";
 import { icons } from "./icons";
 import { t } from "./i18n";
 import { initTheme } from "./prefs";
@@ -27,7 +27,11 @@ import { isWindows } from "./platform";
 const updateDismissed = ref(false);
 
 function openReleasePage() {
-  void openUrl(`${GITHUB_URL}/releases/latest`);
+  void openUrl(SITE_URL);
+}
+
+function openGitHub() {
+  void openUrl(GITHUB_URL);
 }
 
 // 浏览器预览没有窗口 API，静默降级
@@ -85,7 +89,17 @@ const platformFoot = computed(
           {{ item.label }}
         </button>
       </nav>
-      <div class="sidebar-foot">{{ platformFoot }}</div>
+      <div class="sidebar-foot">
+        <span>{{ platformFoot }}</span>
+        <button
+          class="gh-btn"
+          type="button"
+          :title="t('github')"
+          :aria-label="t('github')"
+          @click="openGitHub"
+          v-html="icons.github"
+        ></button>
+      </div>
     </aside>
 
     <!-- 主区 -->

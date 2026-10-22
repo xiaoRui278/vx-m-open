@@ -129,6 +129,7 @@ const messages = {
     versionSuffixMac: "（M3 · macOS 副本管理）",
     versionSuffixWin: "（M4 · Windows 本体多开）",
     github: "GitHub",
+    website: "官网",
     positioning: "定位",
     positioningMacVal: "开源工具，不修改微信本体、不注入、不碰网络协议",
     positioningWinVal:
@@ -257,6 +258,7 @@ const messages = {
     versionSuffixMac: " (M3 · macOS copy management)",
     versionSuffixWin: " (M4 · Windows multi-instance)",
     github: "GitHub",
+    website: "Website",
     positioning: "About",
     positioningMacVal: "Open-source tool. Never modifies WeChat, no injection, no network protocol access",
     positioningWinVal:
