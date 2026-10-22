@@ -98,18 +98,15 @@ const versionText = computed(() => {
     <div class="settings-group">
       <div class="setting-row">
         <span class="setting-key">{{ t("version") }}</span>
-        <span class="setting-val">{{ versionText }}</span>
-      </div>
-      <div class="setting-row">
-        <span class="setting-key">{{ t("checkUpdate") }}</span>
         <span class="setting-val">
-          <template v-if="checking"><span class="spinner" style="display: inline-block; vertical-align: -2px"></span> {{ t("checking") }}</template>
+          {{ versionText }}
+          <template v-if="checking"><span class="spinner" style="display: inline-block; vertical-align: -2px; margin-left: 8px"></span> {{ t("checking") }}</template>
           <template v-else-if="store.updateAvailable">
-            {{ t("updateAvailable", { version: store.updateVersion }) }}
+            <span style="margin-left: 8px">{{ t("updateAvailable", { version: store.updateVersion }) }}</span>
             <button class="btn sm" style="margin-left: 8px" @click="openSite">{{ t("updateDownload") }}</button>
           </template>
-          <template v-else-if="checkResult === 'ok'">{{ t("upToDate") }}</template>
-          <template v-else-if="checkResult === 'fail'">{{ t("checkFailed") }}</template>
+          <template v-else-if="checkResult === 'ok'"><span style="margin-left: 8px">{{ t("upToDate") }}</span></template>
+          <template v-else-if="checkResult === 'fail'"><span style="margin-left: 8px">{{ t("checkFailed") }}</span></template>
           <button class="btn sm" style="margin-left: 8px" :disabled="checking" @click="checkUpdate">
             {{ t("checkUpdate") }}
           </button>
