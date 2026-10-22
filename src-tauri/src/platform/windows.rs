@@ -20,9 +20,10 @@ use windows_sys::Win32::System::Diagnostics::ToolHelp::{
 };
 use windows_sys::Win32::System::Registry::{RegGetValueW, HKEY_CURRENT_USER, RRF_RT_REG_SZ};
 use windows_sys::Win32::System::Threading::{
-    CreateProcessW, GetCurrentProcess, OpenProcess, ResumeThread, TerminateProcess,
-    WaitForSingleObject, CREATE_SUSPENDED, PROCESS_INFORMATION, PROCESS_DUP_HANDLE,
-    PROCESS_SYNCHRONIZE, PROCESS_TERMINATE, STARTUPINFOW,
+    CreateProcessW, GetCurrentProcess, OpenProcess, QueryFullProcessImageNameW, ResumeThread,
+    TerminateProcess, WaitForSingleObject, CREATE_SUSPENDED, PROCESS_INFORMATION,
+    PROCESS_DUP_HANDLE, PROCESS_NAME_WIN32, PROCESS_SYNCHRONIZE, PROCESS_TERMINATE,
+    STARTUPINFOW,
 };
 use windows_sys::Win32::UI::WindowsAndMessaging::{
     EnumWindows, GetWindowThreadProcessId, IsIconic, IsWindowVisible, PostThreadMessageW,
@@ -516,20 +517,26 @@ fn main_thread_id(pid: u32) -> Option<u32> {
     result
 }
 
-/// 快照 pid 的全部后代进程（BFS 遍历父→子映射）。
+/// 快照 pid 的全部后代进程（BFS 遍历父→子映射），返回 (pid, exe 文件名)。
 /// 必须在主进程退出前调用：主进程死后子进程被系统收养，父指针失效无法再定位。
-fn descendant_pids(pid: u32) -> Vec<u32> {
+fn descendant_pids(pid: u32) -> Vec<(u32, String)> {
     let snap = unsafe { CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0) };
     if snap == INVALID_HANDLE_VALUE {
         return Vec::new();
     }
-    let mut procs: Vec<(u32, u32)> = Vec::new(); // (pid, parent_pid)
+    let mut procs: Vec<(u32, u32, String)> = Vec::new(); // (pid, parent_pid, exe 名)
     let mut entry: PROCESSENTRY32W = unsafe { std::mem::zeroed() };
     entry.dwSize = std::mem::size_of::<PROCESSENTRY32W>() as u32;
     unsafe {
         if Process32FirstW(snap, &mut entry) != 0 {
             loop {
-                procs.push((entry.th32ProcessID, entry.th32ParentProcessID));
+                let len = entry
+                    .szExeFile
+                    .iter()
+                    .position(|&c| c == 0)
+                    .unwrap_or(entry.szExeFile.len());
+                let name = String::from_utf16_lossy(&entry.szExeFile[..len]);
+                procs.push((entry.th32ProcessID, entry.th32ParentProcessID, name));
                 if Process32NextW(snap, &mut entry) == 0 {
                     break;
                 }
@@ -537,35 +544,59 @@ fn descendant_pids(pid: u32) -> Vec<u32> {
         }
         CloseHandle(snap);
     }
-    let mut result = Vec::new();
+    let mut result: Vec<(u32, String)> = Vec::new();
     let mut queue = vec![pid];
     let mut i = 0;
     while i < queue.len() {
         let cur = queue[i];
         i += 1;
-        for &(p, parent) in &procs {
+        for &(p, parent, ref name) in &procs {
             if parent == cur && p != 0 && !queue.contains(&p) {
                 queue.push(p);
-                if p != pid {
-                    result.push(p);
-                }
+                result.push((p, name.clone()));
             }
         }
     }
     result
 }
 
-/// 终止单个进程（帮手子进程无需优雅退出，直接强杀；进程已消失则静默跳过）
-fn kill_process_hard(pid: u32) {
+/// 查询进程可执行文件名（不含路径，小写），失败返回 None
+fn process_image_name(handle: HANDLE) -> Option<String> {
+    let mut buf = [0u16; 1024];
+    let mut size = buf.len() as u32;
+    let ok = unsafe {
+        QueryFullProcessImageNameW(
+            handle,
+            PROCESS_NAME_WIN32,
+            buf.as_mut_ptr(),
+            &mut size,
+        )
+    };
+    if ok == 0 {
+        return None;
+    }
+    let full = String::from_utf16_lossy(&buf[..size as usize]);
+    Path::new(&full)
+        .file_name()
+        .map(|n| n.to_string_lossy().to_ascii_lowercase())
+}
+
+/// 终止单个帮手进程。收割前校验 exe 名与快照一致，防止收割窗口内 pid 复用
+/// 或快照孤儿误配时误杀无关进程；进程已消失则静默跳过
+fn kill_process_hard(pid: u32, exe_name: &str) {
     let handle = unsafe { OpenProcess(PROCESS_SYNCHRONIZE | PROCESS_TERMINATE, 0, pid) };
     if handle.is_null() {
         return; // 已不存在
     }
-    // 给 200ms 自然退出机会，未退出则强杀
-    if unsafe { WaitForSingleObject(handle, 200) } != WAIT_OBJECT_0 {
-        unsafe {
-            TerminateProcess(handle, 1);
-            let _ = WaitForSingleObject(handle, 2000);
+    let matches = process_image_name(handle)
+        .is_some_and(|name| name == exe_name.to_ascii_lowercase());
+    if matches {
+        // 给 200ms 余量让其在微信正常关闭流程中自行退出，未退再强杀
+        if unsafe { WaitForSingleObject(handle, 200) } != WAIT_OBJECT_0 {
+            unsafe {
+                TerminateProcess(handle, 1);
+                let _ = WaitForSingleObject(handle, 2000);
+            }
         }
     }
     unsafe { CloseHandle(handle) };
@@ -589,8 +620,8 @@ pub fn terminate(pid: u32) -> PlatformResult<()> {
         unsafe { CloseHandle(handle) };
     }
     // 正常退出时微信会自己带走帮手，此处只兜底收割残留者
-    for child in children {
-        kill_process_hard(child);
+    for (child, name) in children {
+        kill_process_hard(child, &name);
     }
     Ok(())
 }
