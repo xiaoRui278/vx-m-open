@@ -227,6 +227,11 @@ async function runRebuildAll() {
 // ================= 事件监听 =================
 let unlisteners: UnlistenFn[] = [];
 
+/** Esc 关闭通用弹框（进度弹框不响应，防误触） */
+function onKeydown(e: KeyboardEvent) {
+  if (e.key === "Escape" && showModal.value) showModal.value = false;
+}
+
 onMounted(() => {
   // 浏览器预览（非 Tauri）没有事件系统，静默跳过
   try {
@@ -245,11 +250,14 @@ onMounted(() => {
   } catch {
     /* 预览环境 */
   }
+
+  window.addEventListener("keydown", onKeydown);
 });
 
 onUnmounted(() => {
   unlisteners.forEach((u) => u());
   unlisteners = [];
+  window.removeEventListener("keydown", onKeydown);
 });
 
 // ================= 列表渲染辅助 =================
@@ -468,8 +476,8 @@ const anyDialogOpen = computed(
     </template>
   </div>
 
-  <!-- 通用弹框（改名 / 删除确认 / 重建确认 / 全部重建确认） -->
-  <div v-if="showModal" class="overlay" @click.self="showModal = false">
+  <!-- 通用弹框（改名 / 删除确认 / 重建确认 / 全部重建确认）；点空白不关闭，防误触，Esc 可关 -->
+  <div v-if="showModal" class="overlay">
     <div class="dialog" :class="{ 'danger-dialog': modalMode === 'delete' }">
       <div v-if="modalMode === 'delete' || modalMode === 'rebuild' || modalMode === 'rebuildall'" class="dialog-badge" aria-hidden="true" v-html="icons.alert"></div>
       <h3 class="dialog-title">{{ modalTitle }}</h3>
