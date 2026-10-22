@@ -481,16 +481,24 @@ fn close_wechat_mutex_inner(target: HANDLE, pid: u32) -> Result<(bool, Vec<Strin
             continue;
         }
         let type_name = query_object_string(dup, OBJECT_TYPE_INFORMATION);
-        if type_name.as_deref() == Some(MUTANT_TYPE_NAME) {
+        // 仅对安全类型做名称查询（部分对象类型的 NtQueryObject 可能卡死）
+        let type_str = type_name.unwrap_or_default();
+        let interesting = matches!(
+            type_str.as_str(),
+            "Mutant" | "Event" | "Section" | "Semaphore"
+        );
+        if interesting {
             let obj_name = query_object_string(dup, OBJECT_NAME_INFORMATION);
             if let Some(n) = &obj_name {
-                if !n.is_empty() && mutant_names.len() < 8 {
-                    mutant_names.push(n.clone());
+                if !n.is_empty() && mutant_names.len() < 12 {
+                    mutant_names.push(format!("{}:{}", type_str, n));
                 }
             }
-            if obj_name.is_some_and(|n| {
-                WECHAT_MUTEX_MARKS.iter().any(|mark| n.contains(mark))
-            }) {
+            if type_str == "Mutant"
+                && obj_name.is_some_and(|n| {
+                    WECHAT_MUTEX_MARKS.iter().any(|mark| n.contains(mark))
+                })
+            {
                 // 在源进程内关闭原句柄
                 let closed = unsafe {
                     DuplicateHandle(
@@ -514,6 +522,39 @@ fn close_wechat_mutex_inner(target: HANDLE, pid: u32) -> Result<(bool, Vec<Strin
 }
 
 // ---------- 启动 / 激活 / 关闭 ----------
+
+/// 按镜像名快照当前存活的微信进程 pid 集合（EXE_NAMES 中的名字，小写比对）
+fn snapshot_wechat_pids() -> std::collections::HashSet<u32> {
+    let snap = unsafe { CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0) };
+    let mut pids = std::collections::HashSet::new();
+    if snap == INVALID_HANDLE_VALUE {
+        return pids;
+    }
+    let mut entry: PROCESSENTRY32W = unsafe { std::mem::zeroed() };
+    entry.dwSize = std::mem::size_of::<PROCESSENTRY32W>() as u32;
+    unsafe {
+        if Process32FirstW(snap, &mut entry) != 0 {
+            loop {
+                let name = String::from_utf16_lossy(
+                    &entry.szExeFile[..entry
+                        .szExeFile
+                        .iter()
+                        .position(|&c| c == 0)
+                        .unwrap_or(entry.szExeFile.len())],
+                )
+                .to_ascii_lowercase();
+                if EXE_NAMES.iter().any(|e| e.eq_ignore_ascii_case(&name)) && entry.th32ProcessID != 0 {
+                    pids.insert(entry.th32ProcessID);
+                }
+                if Process32NextW(snap, &mut entry) == 0 {
+                    break;
+                }
+            }
+        }
+        CloseHandle(snap);
+    }
+    pids
+}
 
 /// 以挂起方式启动微信，恢复执行后轮询关闭单实例互斥体
 pub fn launch(path: &str) -> PlatformResult<()> {
@@ -550,38 +591,57 @@ pub fn launch(path: &str) -> PlatformResult<()> {
         CloseHandle(pi.hProcess);
     }
 
-    // 微信在初始化早期创建单实例互斥体，10 秒窗口内轮询关闭。
-    // 单次枚举失败（缓冲区抖动/权限抖动）只跳过本轮，不放弃整个窗口；
-    // 150ms 间隔在成功率与 CPU 开销间取平衡（互斥体在初始化早期即创建）。
-    let mut last_err: Option<String> = None;
+    // 微信可能在启动器模式下由首进程拉起真正的主进程后自行退出，
+    // 因此按「镜像名 + 新出现 pid」监测全部微信进程，而不是只盯启动 pid。
+    let before = snapshot_wechat_pids();
+    let started = Instant::now();
+    let deadline = started + Duration::from_secs(12);
     let mut last_names: Vec<String> = Vec::new();
-    let deadline = Instant::now() + Duration::from_secs(10);
+    let mut last_err: Option<String> = None;
     while Instant::now() < deadline {
-        match close_wechat_mutex(pid) {
-            Ok((true, _)) => return Ok(()),
-            Ok((false, names)) => {
-                if !names.is_empty() {
-                    last_names = names;
-                }
-                std::thread::sleep(Duration::from_millis(150));
+        // 当前存活的候选目标：新出现的微信进程 + 启动 pid（若仍存活且是微信同名进程）
+        let mut current = snapshot_wechat_pids();
+        let launched_alive = current.contains(&pid);
+        current.retain(|p| !before.contains(p) || *p == pid);
+        if current.is_empty() && !launched_alive {
+            std::thread::sleep(Duration::from_millis(300));
+            continue;
+        }
+        // 优先处理新出现的 pid（可能是真正的主进程）
+        let ordered: Vec<u32> = {
+            let mut new_pids: Vec<u32> = current.iter().copied().filter(|p| !before.contains(p)).collect();
+            new_pids.sort_unstable();
+            if launched_alive && !new_pids.contains(&pid) {
+                new_pids.push(pid);
             }
-            Err(e) => {
-                last_err = Some(e);
-                std::thread::sleep(Duration::from_millis(300));
+            new_pids
+        };
+        for tpid in &ordered {
+            match close_wechat_mutex(*tpid) {
+                Ok((true, _)) => return Ok(()),
+                Ok((false, names)) => {
+                    if !names.is_empty() {
+                        last_names = names;
+                    }
+                }
+                Err(e) => {
+                    last_err = Some(e);
+                }
             }
         }
-    }
-    // 超时兜底：进程仍存活说明启动本身已成功——互斥体可能已更名、
-    // 或本次启动本就是首个实例无需解除限制，不应误报失败。
-    // 注意：OpenProcess 对「已终止但句柄仍被他人持有」的进程也会成功，
-    // 必须再用 WaitForSingleObject(0) 确认未退出才算真存活
-    let alive = unsafe { OpenProcess(PROCESS_SYNCHRONIZE, 0, pid) };
-    if !alive.is_null() {
-        let running = unsafe { WaitForSingleObject(alive, 0) } != WAIT_TIMEOUT;
-        unsafe { CloseHandle(alive) };
-        if running {
+        // 超过 4 秒仍无任何目标互斥体被关闭、但微信进程存活——该版本微信
+        // 很可能不使用命名互斥体做单实例限制，直接判定启动成功
+        if started.elapsed() > Duration::from_secs(4) && !ordered.is_empty() {
             return Ok(());
         }
+        std::thread::sleep(Duration::from_millis(200));
+    }
+    // 超时判定：任意新微信进程或启动进程仍存活即视为启动成功（互斥体可能
+    // 已改名或该版本无需解除；多开冲突会在用户实际第二次启动时才暴露）
+    let alive_now = snapshot_wechat_pids();
+    let any_alive = alive_now.iter().any(|p| !before.contains(p) || *p == pid);
+    if any_alive {
+        return Ok(());
     }
     match last_err {
         Some(e) => Err(format!("启动失败：进程已退出（{e}）")),
