@@ -1,9 +1,9 @@
 //! Windows 实现。
 //!
 //! 多开原理：以挂起状态启动微信进程，恢复执行后立即轮询其句柄表，
-//! 找到单实例互斥体（名称含 `_WeChat_App_Instance_Identity_Mutex_Name`）
-//! 并关闭，微信随后检查单实例锁时将认为自己第一个启动，从而多开。
-//! 不修改微信本体，不产生副本文件。
+//! 找到单实例互斥体（按 WECHAT_MUTEX_MARKS 宽松片段匹配，兼容 3.x/4.x
+//! 的不同命名）并关闭，微信随后检查单实例锁时将认为自己第一个启动，
+//! 从而多开。不修改微信本体，不产生副本文件。
 
 use std::ffi::{c_void, OsStr};
 use std::os::windows::ffi::OsStrExt;
@@ -35,7 +35,8 @@ use windows_sys::Wdk::System::SystemInformation::NtQuerySystemInformation;
 
 use super::{LaunchTarget, WeChatInfo};
 
-// version.dll 的文件版本查询 API（windows-sys 未覆盖，手动链接）
+// version.dll 的文件版本查询 API（windows-sys 本 crate 未启用对应 feature，手动链接）
+#[link(name = "version")]
 extern "system" {
     fn GetFileVersionInfoSizeW(lptstr_filename: *const u16, lpdw_handle: *mut u32) -> u32;
     fn GetFileVersionInfoW(
@@ -62,6 +63,7 @@ const OBJECT_NAME_INFORMATION: i32 = 1;
 const DUPLICATE_CLOSE_SOURCE: u32 = 0x0000_0001;
 const DUPLICATE_SAME_ACCESS: u32 = 0x0000_0002;
 const WAIT_OBJECT_0: u32 = 0;
+const WAIT_TIMEOUT: u32 = 0x102;
 
 const MUTANT_TYPE_NAME: &str = "Mutant";
 /// 微信单实例互斥体名的候选片段：3.x 用 WeChat 前缀，4.x 可能改用 Weixin
@@ -69,6 +71,8 @@ const MUTANT_TYPE_NAME: &str = "Mutant";
 const WECHAT_MUTEX_MARKS: [&str; 3] = [
     "WeChat_App_Instance",
     "Weixin_App_Instance",
+    // 片段 3 已覆盖片段 1/2（3.x 实际名同时含三者）；单独列出是为了
+    // 明确表达对 4.x 改名的兼容意图，勿当作冗余删除
     "App_Instance_Identity_Mutex",
 ];
 
@@ -555,11 +559,16 @@ pub fn launch(path: &str) -> PlatformResult<()> {
         }
     }
     // 超时兜底：进程仍存活说明启动本身已成功——互斥体可能已更名、
-    // 或本次启动本就是首个实例无需解除限制，不应误报失败
+    // 或本次启动本就是首个实例无需解除限制，不应误报失败。
+    // 注意：OpenProcess 对「已终止但句柄仍被他人持有」的进程也会成功，
+    // 必须再用 WaitForSingleObject(0) 确认未退出才算真存活
     let alive = unsafe { OpenProcess(PROCESS_SYNCHRONIZE, 0, pid) };
     if !alive.is_null() {
+        let running = unsafe { WaitForSingleObject(alive, 0) } != WAIT_TIMEOUT;
         unsafe { CloseHandle(alive) };
-        return Ok(());
+        if running {
+            return Ok(());
+        }
     }
     match last_err {
         Some(e) => Err(format!("启动失败：进程已退出（{e}）")),
