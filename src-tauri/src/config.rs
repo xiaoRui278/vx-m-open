@@ -48,5 +48,9 @@ pub fn set_main_alias(app: &tauri::AppHandle, name: &str) -> Result<(), String> 
     // 原子写：先写临时文件再 rename，进程中断不会留下损坏的 JSON
     let tmp = file.with_extension("json.tmp");
     fs::write(&tmp, json).map_err(|e| format!("写入配置失败：{e}"))?;
-    fs::rename(&tmp, &file).map_err(|e| format!("写入配置失败：{e}"))
+    if let Err(e) = fs::rename(&tmp, &file) {
+        let _ = fs::remove_file(&tmp);
+        return Err(format!("提交配置失败：{e}"));
+    }
+    Ok(())
 }
