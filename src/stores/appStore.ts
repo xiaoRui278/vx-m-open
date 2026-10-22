@@ -8,6 +8,7 @@ let pollTimer: ReturnType<typeof setInterval> | null = null;
 
 export const GITHUB_URL = "https://github.com/xiaoRui278/vx-m-open";
 export const SITE_URL = "https://vxmo.cting.vip";
+const CHECK_TIMEOUT_MS = 5000;
 
 export const useAppStore = defineStore("app", {
   state: () => ({
@@ -128,12 +129,14 @@ export const useAppStore = defineStore("app", {
   },
 });
 
-/** fetch + 超时中断（AbortSignal.timeout 在 macOS 11 的 WKWebView 不可用，手动实现） */
-async function fetchWithTimeout(url: string, init: RequestInit, ms: number): Promise<Response> {
+/** fetch JSON + 超时中断（含响应体读取；AbortSignal.timeout 在 macOS 11 的 WKWebView 不可用，手动实现） */
+async function fetchJsonWithTimeout(url: string, init: RequestInit, ms: number): Promise<unknown> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), ms);
   try {
-    return await fetch(url, { ...init, signal: ctrl.signal });
+    const res = await fetch(url, { ...init, signal: ctrl.signal });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
   } finally {
     clearTimeout(timer);
   }
@@ -142,28 +145,25 @@ async function fetchWithTimeout(url: string, init: RequestInit, ms: number): Pro
 /** 取最新版本号：官网 latest.json 优先，GitHub Release 兜底；全部失败返回 failed: true */
 async function fetchLatestVersion(): Promise<{ version: string; failed: boolean }> {
   try {
-    const res = await fetchWithTimeout(
+    const data = (await fetchJsonWithTimeout(
       `${SITE_URL}/latest.json`,
       { cache: "no-store" },
-      5000,
-    );
-    if (res.ok) {
-      const data = (await res.json()) as { version?: string };
-      const version = (data.version ?? "").trim();
-      if (version) return { version, failed: false };
-    }
+      CHECK_TIMEOUT_MS,
+    )) as { version?: string };
+    const version = (data.version ?? "").trim();
+    if (version) return { version, failed: false };
   } catch {
-    /* 官网未放开跨域或超时，静默转兜底 */
+    /* 官网未放开跨域、超时或响应异常，静默转兜底 */
   }
   try {
-    const res = await fetchWithTimeout(
+    const data = (await fetchJsonWithTimeout(
       `${GITHUB_URL.replace("github.com", "api.github.com/repos")}/releases/latest`,
       { headers: { Accept: "application/vnd.github+json" } },
-      5000,
-    );
-    if (!res.ok) return { version: "", failed: true };
-    const data = (await res.json()) as { tag_name?: string };
-    return { version: (data.tag_name ?? "").replace(/^v/, ""), failed: false };
+      CHECK_TIMEOUT_MS,
+    )) as { tag_name?: string };
+    const version = (data.tag_name ?? "").replace(/^v/, "").trim();
+    if (!version) return { version: "", failed: true };
+    return { version, failed: false };
   } catch {
     return { version: "", failed: true };
   }
