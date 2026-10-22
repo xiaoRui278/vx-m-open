@@ -100,7 +100,7 @@ fn running_state(
 
 /// 列出所有可管理目标（主程序 + 副本），并合并运行状态
 pub fn launch_targets(main_alias: Option<&str>) -> PlatformResult<Vec<LaunchTarget>> {
-    // 只刷新所需进程信息（exe/start_time 自动填充），避免 new_all 全量枚举的额外开销
+    // 只刷新所需进程信息（exe 需显式指定，start_time 自动填充），避免 new_all 全量枚举的额外开销
     let mut sys = System::new();
     sys.refresh_processes_specifics(
         ProcessesToUpdate::All,
