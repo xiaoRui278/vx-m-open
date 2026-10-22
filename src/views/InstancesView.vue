@@ -17,7 +17,7 @@ const isWindows = sharedIsWindows;
 
 // ================= 弹框（创建 / 改名 / 删除 / 重建确认） =================
 const showModal = ref(false);
-const modalMode = ref<"create" | "rename" | "instance-remark" | "delete" | "rebuild" | "rebuildall">("create");
+const modalMode = ref<"create" | "rename" | "instance-remark" | "delete" | "rebuild" | "rebuildall" | "launch-new">("create");
 const renameTarget = ref<LaunchTarget | null>(null);
 const confirmTarget = ref<LaunchTarget | null>(null);
 const isMainRename = ref(false);
@@ -40,6 +40,8 @@ const modalTitle = computed(() => {
       return t("rebuildTitle", { name: confirmTarget.value?.label ?? "" });
     case "instance-remark":
       return t("instanceRemarkTitle");
+    case "launch-new":
+      return t("launchNew");
     default:
       return isMainRename.value ? t("aliasTitle") : t("renameTitle", { name: renameTarget.value?.label ?? "" });
   }
@@ -57,6 +59,8 @@ const modalHint = computed(() => {
       return t("rebuildHint");
     case "instance-remark":
       return t("instanceRemarkHint");
+    case "launch-new":
+      return t("instanceRemarkHint");
     default:
       return isMainRename.value ? t("aliasHint") : t("renameHint");
   }
@@ -71,6 +75,8 @@ const busyLabel = computed(() => {
     case "rebuild":
     case "rebuildall":
       return t("rebuilding");
+    case "launch-new":
+      return t("launching");
     default:
       return t("saving");
   }
@@ -90,6 +96,8 @@ const confirmLabel = computed(() => {
       return t("save");
     case "instance-remark":
       return t("saveRemark");
+    case "launch-new":
+      return t("launchNew");
     default:
       return t("saveRemark");
   }
@@ -127,6 +135,17 @@ function openInstanceRemark(x: LaunchTarget) {
   showModal.value = true;
 }
 
+/** 打开 Windows「启动新实例」弹框：先填备注（可留空）再启动 */
+function openLaunchNew() {
+  if (!mainTarget.value) return;
+  modalMode.value = "launch-new";
+  renameTarget.value = null;
+  confirmTarget.value = null;
+  isMainRename.value = false;
+  nameInput.value = "";
+  showModal.value = true;
+}
+
 function openConfirm(mode: "delete" | "rebuild", x: LaunchTarget) {
   modalMode.value = mode;
   renameTarget.value = null;
@@ -154,6 +173,12 @@ async function confirmModal() {
     if (modalMode.value === "rebuildall") {
       showModal.value = false;
       await runRebuildAll();
+      return;
+    }
+    if (modalMode.value === "launch-new") {
+      const path = mainTarget.value?.path ?? "";
+      showModal.value = false;
+      await runLaunchWithRemark(path, nameInput.value);
       return;
     }
     if (isConfirmMode.value && confirmTarget.value) {
@@ -243,6 +268,28 @@ async function runRebuildAll() {
     store.showMessage(String(e), "error");
   } finally {
     rebuildAllOpen.value = false;
+  }
+}
+
+/** 启动新实例并按需挂备注：启动完成后轮询识别新 pid（不在启动前快照中的实例），把备注写上去 */
+async function runLaunchWithRemark(path: string, remark: string) {
+  const before = new Set(
+    store.targets.filter((t: LaunchTarget) => !t.isMain && t.pid != null).map((t: LaunchTarget) => t.pid as number),
+  );
+  await store.launch(path);
+  const name = remark.trim();
+  if (!name) return;
+  // store.launch 的 runLong 已做了一次 refreshAll；新实例通常已出现，最多再等 5 轮
+  for (let i = 0; i < 5; i++) {
+    const fresh = store.targets.find(
+      (t: LaunchTarget) => !t.isMain && t.pid != null && !before.has(t.pid as number) && t.startedAt != null,
+    );
+    if (fresh) {
+      await store.setInstanceRemark(fresh.pid as number, fresh.startedAt as number, name);
+      return;
+    }
+    await new Promise((r) => setTimeout(r, 600));
+    await store.refreshAll();
   }
 }
 
@@ -461,7 +508,7 @@ const anyDialogOpen = computed(
           </div>
         </div>
         <div class="actions">
-          <button class="btn primary lg" :disabled="store.busy || anyDialogOpen" @click="store.launch(mainTarget.path)">
+          <button class="btn primary lg" :disabled="store.busy || anyDialogOpen" @click="openLaunchNew">
             <span v-if="store.busy" class="spinner"></span>
             <span v-else aria-hidden="true" v-html="icons.play"></span>
             {{ store.busy ? t("launching") : t("launchNew") }}
@@ -500,7 +547,7 @@ const anyDialogOpen = computed(
         <img class="empty-logo" :src="logo" alt="">
         <div class="empty-title">{{ t("winEmptyTitle") }}</div>
         <p class="empty-sub">{{ t("winEmptySub") }}</p>
-        <button class="btn primary" :disabled="store.busy || anyDialogOpen" @click="store.launch(mainTarget?.path ?? '')">
+        <button class="btn primary" :disabled="store.busy || anyDialogOpen" @click="openLaunchNew">
           {{ t("launchNew") }}
         </button>
       </div>
@@ -519,7 +566,7 @@ const anyDialogOpen = computed(
         class="dialog-input"
         maxlength="36"
         :disabled="submitting"
-        :placeholder="isMainRename || modalMode === 'instance-remark' ? t('remarkPlaceholder') : t('createPlaceholder')"
+        :placeholder="modalMode === 'launch-new' || isMainRename || modalMode === 'instance-remark' ? t('remarkPlaceholder') : t('createPlaceholder')"
         @keyup.enter="confirmModal"
       />
       <div class="dialog-actions">
@@ -527,7 +574,7 @@ const anyDialogOpen = computed(
         <button
           class="btn"
           :class="modalMode === 'delete' ? 'danger-solid' : 'primary'"
-          :disabled="submitting || (!isConfirmMode && !nameInput.trim())"
+          :disabled="submitting || (!isConfirmMode && modalMode !== 'launch-new' && !nameInput.trim())"
           @click="confirmModal"
         >
           <span v-if="submitting" class="spinner"></span>
