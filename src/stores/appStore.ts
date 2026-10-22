@@ -124,7 +124,7 @@ export const useAppStore = defineStore("app", {
       void this.initVersion();
       if (pollTimer) clearInterval(pollTimer);
       pollTimer = setInterval(() => {
-        // 窗口不可见时暂停轮询（Tauri 最小化/遮挡时 webview 不可见）
+        // 窗口不可见时暂停轮询（Tauri 最小化/完全遮挡时 webview 不可见；部分环境可能始终 visible，仅优化失效无副作用）
         if (document.visibilityState !== "visible") return;
         if (!this.busy) void this.refreshAll();
       }, 3000);
