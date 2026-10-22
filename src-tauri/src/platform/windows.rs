@@ -10,7 +10,7 @@ use std::os::windows::ffi::OsStrExt;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
-use sysinfo::System;
+use sysinfo::{ProcessesToUpdate, System};
 use windows_sys::Win32::Foundation::{
     CloseHandle, DuplicateHandle, GetLastError, HANDLE, INVALID_HANDLE_VALUE,
 };
@@ -189,7 +189,9 @@ pub fn launch_targets(main_alias: Option<&str>) -> PlatformResult<Vec<LaunchTarg
         .map(|n| n.to_string_lossy().to_ascii_lowercase())
         .unwrap_or_default();
 
-    let sys = System::new_all();
+    // 只刷新进程基本信息，避免 new_all 全量枚举的额外开销
+    let mut sys = System::new();
+    sys.refresh_processes(ProcessesToUpdate::All, true);
     let mut instances: Vec<(u32, u64)> = sys
         .processes()
         .values()
