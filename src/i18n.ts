@@ -130,12 +130,10 @@ const messages = {
     versionSuffixWin: "（M4 · Windows 本体多开）",
     github: "GitHub",
     website: "官网",
-    positioning: "定位",
-    positioningMacVal: "开源工具，不修改微信本体、不注入、不碰网络协议",
-    positioningWinVal:
-      "开源工具，启动时挂起进程并关闭单实例互斥体句柄，不修改微信本体、不注入、不碰网络协议",
+    statementVal: "开源工具，不修改微信本体、不注入、不碰网络协议；非官方第三方工具，与腾讯无关，请遵守微信用户协议",
+    statementWinVal:
+      "开源工具，启动时挂起进程并关闭单实例互斥体句柄，不修改微信本体、不注入、不碰网络协议；非官方第三方工具，与腾讯无关，请遵守微信用户协议",
     disclaimer: "声明",
-    disclaimerVal: "非官方第三方工具，与腾讯无关，请遵守微信用户协议",
     openProjectPage: "打开项目主页",
     checkUpdate: "检查更新",
     upToDate: "已是最新版本",
@@ -259,12 +257,11 @@ const messages = {
     versionSuffixWin: " (M4 · Windows multi-instance)",
     github: "GitHub",
     website: "Website",
-    positioning: "About",
-    positioningMacVal: "Open-source tool. Never modifies WeChat, no injection, no network protocol access",
-    positioningWinVal:
-      "Open-source tool. Suspends the process and closes the single-instance mutex handle. Never modifies WeChat, no injection, no network protocol access",
+    statementVal:
+      "Open-source tool. Never modifies WeChat, no injection, no network protocol access; Unofficial third-party tool, not affiliated with Tencent. Please follow the WeChat user agreement.",
+    statementWinVal:
+      "Open-source tool. Suspends the process and closes the single-instance mutex handle. Never modifies WeChat, no injection, no network protocol access; Unofficial third-party tool, not affiliated with Tencent. Please follow the WeChat user agreement.",
     disclaimer: "Disclaimer",
-    disclaimerVal: "Unofficial third-party tool, not affiliated with Tencent. Please follow the WeChat user agreement.",
     openProjectPage: "Open Project Page",
     checkUpdate: "Check for Updates",
     upToDate: "Up to date",

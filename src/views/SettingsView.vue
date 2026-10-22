@@ -54,24 +54,8 @@ const versionText = computed(() => {
   </header>
 
   <div class="content">
-    <!-- 常规 -->
+    <!-- 通用 -->
     <div class="settings-group">
-      <div class="setting-row">
-        <span class="setting-key">{{ t("wechatPath") }}</span>
-        <span class="setting-val"><span class="path-text">{{ store.info?.path ?? "—" }}</span></span>
-      </div>
-      <div v-if="!isWindows" class="setting-row">
-        <span class="setting-key">{{ t("copyLocation") }}</span>
-        <span class="setting-val">{{ t("copyLocationVal") }}</span>
-      </div>
-      <div v-else class="setting-row">
-        <span class="setting-key">{{ t("detectMethod") }}</span>
-        <span class="setting-val">{{ t("detectMethodVal") }}</span>
-      </div>
-      <div v-if="isWindows" class="setting-row">
-        <span class="setting-key">{{ t("dataLocation") }}</span>
-        <span class="setting-val">{{ t("dataLocationVal") }}</span>
-      </div>
       <div class="setting-row">
         <span class="setting-key">{{ t("language") }}</span>
         <span class="setting-val">
@@ -90,21 +74,23 @@ const versionText = computed(() => {
       </div>
     </div>
 
-    <!-- 支持作者 -->
-    <div class="settings-group donate-group">
-      <div class="donate-lead">
-        <span class="donate-title">{{ t("donateTitle") }}</span>
-        <span class="donate-sub">{{ t("donateSub") }}</span>
+    <!-- 环境 -->
+    <div class="settings-group">
+      <div class="setting-row">
+        <span class="setting-key">{{ t("wechatPath") }}</span>
+        <span class="setting-val"><span class="path-text">{{ store.info?.path ?? "—" }}</span></span>
       </div>
-      <div class="donate-qrs">
-        <figure class="donate-item">
-          <img class="donate-qr" :src="wechatQrImg" :alt="t('donateWechat')" draggable="false" />
-          <figcaption>{{ t("donateWechat") }}</figcaption>
-        </figure>
-        <figure class="donate-item">
-          <img class="donate-qr" :src="alipayQrImg" :alt="t('donateAlipay')" draggable="false" />
-          <figcaption>{{ t("donateAlipay") }}</figcaption>
-        </figure>
+      <div v-if="!isWindows" class="setting-row">
+        <span class="setting-key">{{ t("copyLocation") }}</span>
+        <span class="setting-val">{{ t("copyLocationVal") }}</span>
+      </div>
+      <div v-else class="setting-row">
+        <span class="setting-key">{{ t("detectMethod") }}</span>
+        <span class="setting-val">{{ t("detectMethodVal") }}</span>
+      </div>
+      <div v-if="isWindows" class="setting-row">
+        <span class="setting-key">{{ t("dataLocation") }}</span>
+        <span class="setting-val">{{ t("dataLocationVal") }}</span>
       </div>
     </div>
 
@@ -136,12 +122,26 @@ const versionText = computed(() => {
         </span>
       </div>
       <div class="setting-row">
-        <span class="setting-key">{{ t("positioning") }}</span>
-        <span class="setting-val">{{ isWindows ? t("positioningWinVal") : t("positioningMacVal") }}</span>
-      </div>
-      <div class="setting-row">
         <span class="setting-key">{{ t("disclaimer") }}</span>
-        <span class="setting-val">{{ t("disclaimerVal") }}</span>
+        <span class="setting-val">{{ isWindows ? t("statementWinVal") : t("statementVal") }}</span>
+      </div>
+    </div>
+
+    <!-- 支持作者 -->
+    <div class="settings-group donate-group">
+      <div class="donate-lead">
+        <span class="donate-title">{{ t("donateTitle") }}</span>
+        <span class="donate-sub">{{ t("donateSub") }}</span>
+      </div>
+      <div class="donate-qrs">
+        <figure class="donate-item">
+          <img class="donate-qr" :src="wechatQrImg" :alt="t('donateWechat')" draggable="false" />
+          <figcaption>{{ t("donateWechat") }}</figcaption>
+        </figure>
+        <figure class="donate-item">
+          <img class="donate-qr" :src="alipayQrImg" :alt="t('donateAlipay')" draggable="false" />
+          <figcaption>{{ t("donateAlipay") }}</figcaption>
+        </figure>
       </div>
     </div>
   </div>
