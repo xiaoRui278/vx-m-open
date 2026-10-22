@@ -24,7 +24,10 @@ pub fn main_alias(app: &tauri::AppHandle) -> Result<Option<String>, String> {
         return Ok(None);
     };
     let aliases: Aliases = serde_json::from_str(&text).unwrap_or_default();
-    Ok(aliases.main.filter(|s| !s.trim().is_empty()))
+    // 兼容旧版本可能已写入的 "WeChat" 备注：读取侧一并过滤（写入侧已拒绝该值）
+    Ok(aliases
+        .main
+        .filter(|s| !s.trim().is_empty() && !s.trim().eq_ignore_ascii_case("WeChat")))
 }
 
 pub fn set_main_alias(app: &tauri::AppHandle, name: &str) -> Result<(), String> {
