@@ -63,9 +63,7 @@ const OBJECT_NAME_INFORMATION: i32 = 1;
 const DUPLICATE_CLOSE_SOURCE: u32 = 0x0000_0001;
 const DUPLICATE_SAME_ACCESS: u32 = 0x0000_0002;
 const WAIT_OBJECT_0: u32 = 0;
-const WAIT_TIMEOUT: u32 = 0x102;
 
-const MUTANT_TYPE_NAME: &str = "Mutant";
 /// 微信单实例互斥体名的候选片段：3.x 用 WeChat 前缀，4.x 可能改用 Weixin
 /// 或其它前缀，按宽松片段匹配并全部关闭
 const WECHAT_MUTEX_MARKS: [&str; 3] = [
@@ -75,7 +73,6 @@ const WECHAT_MUTEX_MARKS: [&str; 3] = [
     // 明确表达对 4.x 改名的兼容意图，勿当作冗余删除
     "App_Instance_Identity_Mutex",
 ];
-
 const EXE_NAMES: [&str; 2] = ["WeChat.exe", "Weixin.exe"];
 const REG_SUBKEYS: [&str; 2] = ["Software\\Tencent\\WeChat", "Software\\Tencent\\Weixin"];
 const DEFAULT_DIRS: [&str; 3] = [
