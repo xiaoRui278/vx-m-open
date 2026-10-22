@@ -4,6 +4,7 @@ import { useAppStore, SITE_URL } from "../stores/appStore";
 import { locale, setLocale, t, type Locale } from "../i18n";
 import { setTheme, theme, type Theme } from "../prefs";
 import { openUrl } from "../api";
+import { icons } from "../icons";
 import { isWindows as sharedIsWindows } from "../platform";
 import wechatQrImg from "../assets/donate-wechat.png";
 import alipayQrImg from "../assets/donate-alipay.png";
@@ -42,6 +43,9 @@ const versionText = computed(() => {
   const suffix = isWindows ? t("versionSuffixWin") : t("versionSuffixMac");
   return `v${store.appVersion || "1.0.0"}${suffix}`;
 });
+
+// ---- 支持作者弹框 ----
+const donateOpen = ref(false);
 </script>
 
 <template>
@@ -122,17 +126,25 @@ const versionText = computed(() => {
         <span class="setting-val">{{ isWindows ? t("positioningWinVal") : t("positioningMacVal") }}</span>
       </div>
       <div class="setting-row">
+        <span class="setting-key">{{ t("donateTitle") }}</span>
+        <span class="setting-val">
+          <button class="link-btn" @click="donateOpen = true">
+            <span class="donate-btn-icon" aria-hidden="true" v-html="icons.wechat"></span>{{ t("donateAction") }}
+          </button>
+        </span>
+      </div>
+      <div class="setting-row">
         <span class="setting-key">{{ t("disclaimer") }}</span>
         <span class="setting-val">{{ t("disclaimerVal") }}</span>
       </div>
     </div>
+  </div>
 
-    <!-- 支持作者 -->
-    <div class="settings-group donate-group">
-      <div class="donate-lead">
-        <span class="donate-title">{{ t("donateTitle") }}</span>
-        <span class="donate-sub">{{ t("donateSub") }}</span>
-      </div>
+  <!-- 支持作者弹框 -->
+  <div v-if="donateOpen" class="overlay" @click.self="donateOpen = false">
+    <div class="dialog">
+      <h3 class="dialog-title">{{ t("donateTitle") }}</h3>
+      <p class="dialog-hint">{{ t("donateSub") }}</p>
       <div class="donate-qrs">
         <figure class="donate-item">
           <img class="donate-qr" :src="wechatQrImg" :alt="t('donateWechat')" draggable="false" />
@@ -142,6 +154,9 @@ const versionText = computed(() => {
           <img class="donate-qr" :src="alipayQrImg" :alt="t('donateAlipay')" draggable="false" />
           <figcaption>{{ t("donateAlipay") }}</figcaption>
         </figure>
+      </div>
+      <div class="dialog-actions">
+        <button class="btn" @click="donateOpen = false">{{ t("cancel") }}</button>
       </div>
     </div>
   </div>

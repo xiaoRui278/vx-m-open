@@ -147,6 +147,7 @@ const messages = {
     // 支持作者
     donateTitle: "支持作者",
     donateSub: "觉得工具好用，请作者喝杯咖啡吧",
+    donateAction: "请作者喝杯咖啡",
     donateWechat: "微信支付",
     donateAlipay: "支付宝",
 
@@ -275,6 +276,7 @@ const messages = {
 
     donateTitle: "Support the Author",
     donateSub: "Enjoying this tool? Buy the author a coffee",
+    donateAction: "Buy the author a coffee",
     donateWechat: "WeChat Pay",
     donateAlipay: "Alipay",
 
