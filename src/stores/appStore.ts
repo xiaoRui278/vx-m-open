@@ -135,18 +135,23 @@ export const useAppStore = defineStore("app", {
       this.updateAvailable = false;
       return "ok";
     },
-    /** 一键更新：连 updater 通道下载安装并重启。失败返回 false（横幅降级为"前往官网"） */
+    /** 一键更新：连 updater 通道下载安装并重启。失败返回 false（横幅降级为"前往官网"）。
+     *  不走 runLong：它内部吞异常且会触发 refreshAll，更新失败需要自己接住并降级 */
     async updateNow(): Promise<boolean> {
+      this.busy = true;
+      this.busyText = t("updateDownloadingUnknown");
       try {
-        await this.runLong(t("updateInstalling"), async () => {
-          await installUpdate((p) => {
-            this.busyText = p.percent >= 0 ? t("updateDownloading", { percent: p.percent }) : t("updateDownloadingUnknown");
-          });
+        await installUpdate((p) => {
+          this.busyText = p.percent >= 0 ? t("updateDownloading", { percent: p.percent }) : t("updateDownloadingUnknown");
         });
         return true; // relaunch 成功则进程已重启，走不到这行
-      } catch {
+      } catch (e) {
         this.updateViaUpdater = false;
+        this.showMessage(String(e), "error");
         return false;
+      } finally {
+        this.busy = false;
+        this.busyText = "";
       }
     },
     init() {
