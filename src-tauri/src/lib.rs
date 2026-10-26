@@ -4,6 +4,8 @@ mod platform;
 
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .invoke_handler(tauri::generate_handler![
             commands::detect_wechat,
             commands::list_launch_targets,
