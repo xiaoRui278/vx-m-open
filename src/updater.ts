@@ -34,5 +34,6 @@ export async function installUpdate(onProgress: (p: DownloadProgress) => void): 
         break;
     }
   });
+  // Windows 下安装器自带重启，relaunch 仅对 macOS/Linux 生效
   await relaunch();
 }
