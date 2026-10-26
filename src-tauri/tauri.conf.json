@@ -35,7 +35,12 @@
     ],
     "windows": {
       "nsis": {
-        "installerIcon": "icons/icon.ico"
+        "installerIcon": "icons/icon.ico",
+        "languages": ["SimpChinese"],
+        "displayLanguageSelector": false
+      },
+      "wix": {
+        "language": "Simplified Chinese"
       }
     }
   }
