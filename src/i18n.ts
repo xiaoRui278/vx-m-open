@@ -151,7 +151,7 @@ const messages = {
     donateAlipay: "支付宝",
 
     // 更新横幅
-    updateBanner: "VXMOpen v{version} 已发布，前往下载页获取新版本",
+    updateBanner: "VXMOpen v{version} 已发布，发现新版本可用",
     updateInstallNow: "立即更新",
     updateDownloading: "正在下载更新… {percent}%",
     updateDownloadingUnknown: "正在下载更新…",
@@ -283,7 +283,7 @@ const messages = {
     donateWechat: "WeChat Pay",
     donateAlipay: "Alipay",
 
-    updateBanner: "VXMOpen v{version} is available — visit the release page to download",
+    updateBanner: "VXMOpen v{version} is available",
     updateInstallNow: "Install Now",
     updateDownloading: "Downloading update… {percent}%",
     updateDownloadingUnknown: "Downloading update…",
