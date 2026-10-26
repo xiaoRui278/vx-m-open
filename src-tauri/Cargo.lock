@@ -4149,7 +4149,7 @@ dependencies = [
 
 [[package]]
 name = "vx-m-open"
-version = "1.0.2"
+version = "1.1.0"
 dependencies = [
  "plist",
  "serde",
