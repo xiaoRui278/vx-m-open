@@ -123,7 +123,7 @@ export const useAppStore = defineStore("app", {
      *  判断层保持现状：官网 latest.json 优先、GitHub 兜底（顺带匿名统计）。
      *  下载层（updater 通道）只在用户点「立即更新」时才连，见 updateNow。 */
     async checkUpdate(): Promise<"ok" | "new" | "fail"> {
-      const { version, failed } = await fetchLatestVersion(this.appVersion);
+      const { version, failed } = await fetchLatestVersion();
       if (failed) return "fail";
       if (version && isNewer(version, this.appVersion)) {
         this.updateVersion = version;
@@ -186,38 +186,11 @@ async function fetchJsonWithTimeout(url: string, init: RequestInit, ms: number):
   }
 }
 
-/** 匿名安装标识：首启随机生成、localStorage 持久化。仅用于访问日志计数，无任何行为数据 */
-function installUuid(): string {
+/** 取最新版本号：官网 latest.json 优先，GitHub Release 兜底；全部失败返回 failed: true */
+async function fetchLatestVersion(): Promise<{ version: string; failed: boolean }> {
   try {
-    let id = localStorage.getItem("vxmo_install_id");
-    if (!id) {
-      id = crypto.randomUUID();
-      localStorage.setItem("vxmo_install_id", id);
-    }
-    return id;
-  } catch {
-    return "";
-  }
-}
-
-/** 平台标记：供 OSS 访问日志分平台统计 */
-function platformTag(): string {
-  const ua = navigator.userAgent;
-  if (ua.includes("Mac")) return "macos";
-  if (ua.includes("Win")) return "windows";
-  return "other";
-}
-
-/** 取最新版本号：官网 latest.json 优先（顺带匿名上报安装标识/平台/版本，OSS 忽略 query 但日志留痕），GitHub Release 兜底；全部失败返回 failed: true */
-async function fetchLatestVersion(appVersion: string): Promise<{ version: string; failed: boolean }> {
-  try {
-    const qs = new URLSearchParams();
-    const uuid = installUuid();
-    if (uuid) qs.set("u", uuid);
-    qs.set("p", platformTag());
-    if (appVersion) qs.set("v", appVersion);
     const data = (await fetchJsonWithTimeout(
-      `${SITE_URL}/latest.json?${qs.toString()}`,
+      `${SITE_URL}/latest.json`,
       { cache: "no-store" },
       CHECK_TIMEOUT_MS,
     )) as { version?: string };
