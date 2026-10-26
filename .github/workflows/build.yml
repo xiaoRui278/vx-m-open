@@ -58,6 +58,8 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           args: ${{ matrix.args }}
           tagName: v__VERSION__
@@ -67,9 +69,13 @@ jobs:
           prerelease: false
 
       # 手动触发：只构建不发布，产物走下面的 Artifacts
+      # createUpdaterArtifacts 开启后构建需要签名私钥，手动验证同样注入
       - name: Build (manual, no release)
         if: github.event_name == 'workflow_dispatch'
         run: pnpm tauri build ${{ matrix.args }}
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
 
       # 仅手动触发时把安装包挂到本次 run 的 Artifacts，方便下载验证
       - name: Upload macOS artifacts

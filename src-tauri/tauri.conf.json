@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "vx-m-open",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "identifier": "io.github.vxmopen.app",
   "build": {
     "beforeDevCommand": "pnpm dev",
@@ -24,6 +24,7 @@
     }
   },
   "bundle": {
+    "createUpdaterArtifacts": true,
     "active": true,
     "targets": "all",
     "icon": [
@@ -35,8 +36,22 @@
     ],
     "windows": {
       "nsis": {
-        "installerIcon": "icons/icon.ico"
+        "installerIcon": "icons/icon.ico",
+        "languages": ["SimpChinese", "English"],
+        "displayLanguageSelector": false
+      },
+      "wix": {
+        "language": ["zh-CN", "en-US"]
       }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://vxmo.cting.vip/latest.json",
+        "https://github.com/xiaoRui278/vx-m-open/releases/latest/download/latest.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEEyNTkyOUMyOTgxOUE1NkUKUldSdXBSbVl3aWxab2pMclpzYlFrRGNDWmN6N0NBaFFzTFI1ZHhvMGJCdzFPd1pTOWcxelFGUGQK"
     }
   }
 }

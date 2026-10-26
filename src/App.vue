@@ -25,6 +25,16 @@ const views = {
 
 import { isWindows } from "./platform";
 const updateDismissed = ref(false);
+const updating = ref(false);
+
+async function updateNow() {
+  updating.value = true;
+  try {
+    await store.updateNow();
+  } finally {
+    updating.value = false;
+  }
+}
 
 function openReleasePage() {
   void openUrl(SITE_URL);
@@ -107,7 +117,10 @@ const platformFoot = computed(
       <div v-if="store.updateAvailable && !updateDismissed" class="update-strip">
         <span aria-hidden="true" v-html="icons.alert"></span>
         <span class="head-fill">{{ t("updateBanner", { version: store.updateVersion }) }}</span>
-        <button class="btn sm" @click="openReleasePage">{{ t("updateDownload") }}</button>
+        <button v-if="store.updateViaUpdater" class="btn sm" :disabled="updating || store.busy" @click="updateNow">
+          {{ t("updateInstallNow") }}
+        </button>
+        <button v-else class="btn sm" @click="openReleasePage">{{ t("updateDownload") }}</button>
         <button class="dismiss" :aria-label="t('cancel')" @click="updateDismissed = true" v-html="icons.x"></button>
       </div>
       <component :is="views[active]" />
