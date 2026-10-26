@@ -37,11 +37,11 @@
     "windows": {
       "nsis": {
         "installerIcon": "icons/icon.ico",
-        "languages": ["SimpChinese"],
+        "languages": ["SimpChinese", "English"],
         "displayLanguageSelector": false
       },
       "wix": {
-        "language": "zh-CN"
+        "language": ["zh-CN", "en-US"]
       }
     }
   },
