@@ -139,7 +139,7 @@ export const useAppStore = defineStore("app", {
      *  不走 runLong：它内部吞异常且会触发 refreshAll，更新失败需要自己接住并降级 */
     async updateNow(): Promise<boolean> {
       this.busy = true;
-      this.busyText = t("updateDownloadingUnknown");
+      this.busyText = t("updatePreparing");
       try {
         await installUpdate((p) => {
           this.busyText = p.percent >= 0 ? t("updateDownloading", { percent: p.percent }) : t("updateDownloadingUnknown");

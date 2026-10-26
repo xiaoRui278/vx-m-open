@@ -153,6 +153,7 @@ const messages = {
     // 更新横幅
     updateBanner: "VXMOpen v{version} 已发布，发现新版本可用",
     updateInstallNow: "立即更新",
+    updatePreparing: "正在准备更新…",
     updateDownloading: "正在下载更新… {percent}%",
     updateDownloadingUnknown: "正在下载更新…",
     updateInstalling: "正在安装更新，应用即将重启",
@@ -285,6 +286,7 @@ const messages = {
 
     updateBanner: "VXMOpen v{version} is available",
     updateInstallNow: "Install Now",
+    updatePreparing: "Preparing update…",
     updateDownloading: "Downloading update… {percent}%",
     updateDownloadingUnknown: "Downloading update…",
     updateInstalling: "Installing update, restarting soon",

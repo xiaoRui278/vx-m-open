@@ -16,7 +16,7 @@ export interface DownloadProgress {
 /** 下载并安装更新，完成后自动重启应用。任何异常向上抛出由调用方提示降级 */
 export async function installUpdate(onProgress: (p: DownloadProgress) => void): Promise<void> {
   if (!updaterAvailable) throw new Error("updater unavailable");
-  const update: Update | null = await check({ timeout: 8000 });
+  const update: Update | null = await check({ timeout: 5000 });
   if (!update) throw new Error("no update available");
   let total = 0;
   let received = 0;
