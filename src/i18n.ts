@@ -152,6 +152,10 @@ const messages = {
 
     // 更新横幅
     updateBanner: "VXMOpen v{version} 已发布，前往下载页获取新版本",
+    updateInstallNow: "立即更新",
+    updateDownloading: "正在下载更新… {percent}%",
+    updateDownloadingUnknown: "正在下载更新…",
+    updateInstalling: "正在安装更新，应用即将重启",
 
     // Toast / 状态（仅异步长任务完成与错误；可见结果静默——见 design.md）
     copyCreated: "副本「{name}」创建成功",
@@ -280,6 +284,10 @@ const messages = {
     donateAlipay: "Alipay",
 
     updateBanner: "VXMOpen v{version} is available — visit the release page to download",
+    updateInstallNow: "Install Now",
+    updateDownloading: "Downloading update… {percent}%",
+    updateDownloadingUnknown: "Downloading update…",
+    updateInstalling: "Installing update, restarting soon",
 
     copyCreated: "Copy \"{name}\" created",
     rebuilt: "Copy rebuilt to the new version, no re-login needed",
