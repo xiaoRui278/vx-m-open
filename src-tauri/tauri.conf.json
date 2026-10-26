@@ -41,7 +41,7 @@
         "displayLanguageSelector": false
       },
       "wix": {
-        "language": "Simplified Chinese"
+        "language": "zh-CN"
       }
     }
   },
