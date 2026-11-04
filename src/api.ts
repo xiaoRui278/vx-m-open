@@ -18,6 +18,7 @@ const MOCK_TARGETS: LaunchTarget[] = [
     startedAt: MOCK_NOW - 5400,
     outdated: false,
     instanceCount: 2,
+    profileId: "wechat",
   },
   {
     path: "/Applications/WeChat 工作号.app",
@@ -30,6 +31,7 @@ const MOCK_TARGETS: LaunchTarget[] = [
     startedAt: MOCK_NOW - 1200,
     outdated: false,
     instanceCount: 0,
+    profileId: "wechat",
   },
   {
     path: "/Applications/WeChat 测试号（这是一个非常长的备注名称用来验证换行）.app",
@@ -42,6 +44,7 @@ const MOCK_TARGETS: LaunchTarget[] = [
     startedAt: null,
     outdated: true,
     instanceCount: 0,
+    profileId: "wechat",
   },
 ];
 

@@ -1,6 +1,10 @@
 mod commands;
 mod config;
 mod platform;
+mod profiles;
+
+#[cfg(test)]
+mod walkthrough;
 
 pub fn run() {
     tauri::Builder::default()

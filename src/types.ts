@@ -20,6 +20,8 @@ export interface LaunchTarget {
   outdated: boolean;
   /** 运行实例数（Windows 主程序多开时 > 1；macOS 恒为 0 或 1） */
   instanceCount: number;
+  /** 所属应用 profile（微信恒 "wechat"，UI 暂不展示） */
+  profileId: string;
 }
 
 /** Windows 运行实例的临时备注（按 pid + 启动时间匹配，进程关闭即失效） */

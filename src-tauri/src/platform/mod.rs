@@ -1,19 +1,11 @@
 //! 平台抽象层。
 //!
-//! macOS 与 Windows 的多开原理不同（macOS 靠副本换 Bundle ID，Windows 靠
-//! 处理单实例互斥体），commands 层只面向同一组函数签名，接入 Windows
-//! 时新增 `windows` 模块并替换 cfg 分发即可。
+//! 结构为『引擎（engine）+ profile（参数）+ 平台策略实现（macos/windows）』：
+//! `engine.rs` 持有内置 profile，按当前平台分派给策略实现；平台实现只含
+//! 机制逻辑，所有应用专属参数（App 名、Bundle ID、互斥体片段、注册表键等）
+//! 来自 `crate::profiles` 的声明。
 
 use serde::Serialize;
-
-#[cfg(target_os = "macos")]
-pub use macos as provider;
-
-#[cfg(target_os = "windows")]
-pub use windows as provider;
-
-#[cfg(not(any(target_os = "macos", target_os = "windows")))]
-pub use unsupported as provider;
 
 #[cfg(target_os = "macos")]
 pub mod macos;
@@ -21,8 +13,13 @@ pub mod macos;
 #[cfg(target_os = "windows")]
 pub mod windows;
 
-#[cfg(not(any(target_os = "macos", target_os = "windows")))]
-pub mod unsupported;
+pub mod engine;
+
+/// 平台实现统一错误别名
+pub type PlatformResult<T> = Result<T, String>;
+
+/// 引擎入口即 provider：commands 层面向 `provider::*` 调用，不感知 profile 细节
+pub use engine as provider;
 
 #[derive(Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -41,7 +38,7 @@ pub struct LaunchTarget {
     pub path: String,
     /// .app 目录名（如 WeChat.app）
     pub app_name: String,
-    /// 展示名：主程序用备注名（无则 "WeChat"，由前端 i18n 映射），副本用目录名
+    /// 展示名：主程序用备注名（无则用 profile 默认名，前端 i18n 映射），副本用目录名
     pub label: String,
     pub version: Option<String>,
     pub is_main: bool,
@@ -53,4 +50,6 @@ pub struct LaunchTarget {
     pub outdated: bool,
     /// 运行实例数（Windows 主程序多开时 > 1；macOS 恒为 0 或 1）
     pub instance_count: u32,
+    /// 所属应用 profile（微信恒 "wechat"；UI 暂不展示，v1.3+ 供分组/路由）
+    pub profile_id: String,
 }

@@ -1,9 +1,12 @@
-//! Windows 实现。
+//! Windows 策略实现（mutex 模型）。
 //!
 //! 多开原理：以挂起状态启动微信进程，恢复执行后立即轮询其句柄表，
-//! 找到单实例互斥体（按 WECHAT_MUTEX_MARKS 宽松片段匹配，兼容 3.x/4.x
+//! 找到单实例互斥体（按 profile 声明的互斥体名片段宽松匹配，兼容 3.x/4.x
 //! 的不同命名）并关闭，微信随后检查单实例锁时将认为自己第一个启动，
 //! 从而多开。不修改微信本体，不产生副本文件。
+//!
+//! 应用专属参数（exe 名、注册表键、默认目录、互斥体片段）全部来自
+//! `crate::profiles` 的 Windows 声明；本文件只含策略机制，无应用专属常量。
 
 use std::ffi::{c_void, OsStr};
 use std::os::windows::ffi::OsStrExt;
@@ -33,7 +36,10 @@ use windows_sys::Win32::UI::WindowsAndMessaging::{
 use windows_sys::Wdk::Foundation::NtQueryObject;
 use windows_sys::Wdk::System::SystemInformation::NtQuerySystemInformation;
 
-use super::{LaunchTarget, WeChatInfo};
+use super::engine::EnginePlatform;
+use super::{LaunchTarget, PlatformResult, WeChatInfo};
+use crate::profiles::schema::{WindowsDetect, WindowsPlatform};
+
 
 // version.dll 的文件版本查询 API（windows-sys 本 crate 未启用对应 feature，手动链接）
 #[link(name = "version")]
@@ -53,8 +59,6 @@ extern "system" {
     ) -> i32;
 }
 
-type PlatformResult<T> = Result<T, String>;
-
 // ---- NT 常量（windows-sys 未导出的句柄表结构与常量，自定义） ----
 const SYSTEM_EXTENDED_HANDLE_INFORMATION: i32 = 0x40;
 const STATUS_INFO_LENGTH_MISMATCH: i32 = 0xC000_0004u32 as i32;
@@ -63,23 +67,6 @@ const OBJECT_NAME_INFORMATION: i32 = 1;
 const DUPLICATE_CLOSE_SOURCE: u32 = 0x0000_0001;
 const DUPLICATE_SAME_ACCESS: u32 = 0x0000_0002;
 const WAIT_OBJECT_0: u32 = 0;
-
-/// 微信单实例互斥体名的候选片段：3.x 用 WeChat 前缀，4.x 可能改用 Weixin
-/// 或其它前缀，按宽松片段匹配并全部关闭
-const WECHAT_MUTEX_MARKS: [&str; 3] = [
-    "WeChat_App_Instance",
-    "Weixin_App_Instance",
-    // 片段 3 已覆盖片段 1/2（3.x 实际名同时含三者）；单独列出是为了
-    // 明确表达对 4.x 改名的兼容意图，勿当作冗余删除
-    "App_Instance_Identity_Mutex",
-];
-const EXE_NAMES: [&str; 2] = ["WeChat.exe", "Weixin.exe"];
-const REG_SUBKEYS: [&str; 2] = ["Software\\Tencent\\WeChat", "Software\\Tencent\\Weixin"];
-const DEFAULT_DIRS: [&str; 3] = [
-    "C:\\Program Files\\Tencent\\WeChat",
-    "C:\\Program Files\\Tencent\\Weixin",
-    "C:\\Program Files (x86)\\Tencent\\WeChat",
-];
 
 const NO_COPY: &str = "Windows 端直接多开微信本体，无需副本，此操作不可用";
 
@@ -112,10 +99,10 @@ fn parse_version(s: &str) -> Option<[u64; 4]> {
     Some(v)
 }
 
-/// 读注册表 InstallPath（微信 4.x 键名 Weixin，3.x 键名 WeChat）
-fn registry_install_dir(subkey: &str) -> Option<String> {
+/// 读注册表安装目录值（值名来自 profile，微信为 InstallPath）
+fn registry_install_dir(subkey: &str, value_name: &str) -> Option<String> {
     let subkey_w = to_wide(subkey);
-    let value_w = to_wide("InstallPath");
+    let value_w = to_wide(value_name);
     let mut buf = [0u16; 512];
     let mut size = (buf.len() * 2) as u32;
     let status = unsafe {
@@ -139,7 +126,7 @@ fn registry_install_dir(subkey: &str) -> Option<String> {
 }
 
 /// 安装目录下找版本子目录（形如 4.0.3.22）内的 exe，取版本最高的
-fn find_exe(dir: &str) -> Option<(PathBuf, String)> {
+fn find_exe(dir: &str, exe_names: &[String]) -> Option<(PathBuf, String)> {
     let base = PathBuf::from(dir);
     let mut best: Option<([u64; 4], PathBuf, String)> = None;
     if let Ok(rd) = std::fs::read_dir(&base) {
@@ -148,7 +135,7 @@ fn find_exe(dir: &str) -> Option<(PathBuf, String)> {
             let Some(ver) = parse_version(&name) else {
                 continue;
             };
-            for exe in EXE_NAMES {
+            for exe in exe_names {
                 let p = base.join(&name).join(exe);
                 if p.is_file() {
                     if best.as_ref().is_none_or(|(v, _, _)| ver > *v) {
@@ -163,7 +150,7 @@ fn find_exe(dir: &str) -> Option<(PathBuf, String)> {
         return Some((p, ver));
     }
     // 兜底：exe 直接放在安装目录（无版本子目录的旧结构）
-    for exe in EXE_NAMES {
+    for exe in exe_names {
         let p = base.join(exe);
         if p.is_file() {
             return Some((p, String::new()));
@@ -247,16 +234,16 @@ fn build_info(exe: PathBuf, version: String) -> WeChatInfo {
     }
 }
 
-pub fn detect() -> PlatformResult<WeChatInfo> {
-    for subkey in REG_SUBKEYS {
-        if let Some(dir) = registry_install_dir(subkey) {
-            if let Some((exe, version)) = find_exe(&dir) {
+pub fn detect(w: &WindowsDetect) -> PlatformResult<WeChatInfo> {
+    for subkey in &w.registry_keys {
+        if let Some(dir) = registry_install_dir(subkey, &w.install_path_value) {
+            if let Some((exe, version)) = find_exe(&dir, &w.exe_names) {
                 return Ok(build_info(exe, version));
             }
         }
     }
-    for dir in DEFAULT_DIRS {
-        if let Some((exe, version)) = find_exe(dir) {
+    for dir in &w.fallback_dirs {
+        if let Some((exe, version)) = find_exe(dir, &w.exe_names) {
             return Ok(build_info(exe, version));
         }
     }
@@ -264,15 +251,19 @@ pub fn detect() -> PlatformResult<WeChatInfo> {
 }
 
 /// 列出主程序（含运行实例数）与每个运行中的实例
-pub fn launch_targets(main_alias: Option<&str>) -> PlatformResult<Vec<LaunchTarget>> {
-    let info = detect()?;
+pub fn launch_targets(
+    w: &WindowsDetect,
+    main_alias: Option<&str>,
+    default_label: &str,
+) -> PlatformResult<Vec<LaunchTarget>> {
+    let info = detect(w)?;
     let Some(exe) = info.path.clone() else {
         return Ok(Vec::new());
     };
     let exe_lower = exe
         .trim_start_matches(r"\\?\")
         .to_ascii_lowercase();
-    // 按进程映像名匹配（Weixin.exe / WeChat.exe），路径全串比对易受
+    // 按进程映像名匹配（profile 声明的 exe 名），路径全串比对易受
     // \\?\ 前缀、8.3 短路径、注册表路径陈旧等影响而漏检运行实例
     let exe_name = Path::new(&exe)
         .file_name()
@@ -316,8 +307,8 @@ pub fn launch_targets(main_alias: Option<&str>) -> PlatformResult<Vec<LaunchTarg
         app_name,
         label: main_alias
             .filter(|s| !s.trim().is_empty())
-            // 语言中立标记值，前端对主程序做 i18n 映射（微信 / WeChat）
-            .unwrap_or("WeChat")
+            // 语言中立标记值，前端对主程序做 i18n 映射
+            .unwrap_or(default_label)
             .to_string(),
         version: info.version.clone(),
         is_main: true,
@@ -326,6 +317,7 @@ pub fn launch_targets(main_alias: Option<&str>) -> PlatformResult<Vec<LaunchTarg
         started_at: instances.first().map(|&(_, t)| t),
         outdated: false,
         instance_count: count,
+        profile_id: String::new(),
     }];
 
     for (i, &(pid, started)) in instances.iter().enumerate() {
@@ -340,6 +332,7 @@ pub fn launch_targets(main_alias: Option<&str>) -> PlatformResult<Vec<LaunchTarg
             started_at: Some(started),
             outdated: false,
             instance_count: 1,
+            profile_id: String::new(),
         });
     }
     Ok(targets)
@@ -415,18 +408,26 @@ fn query_object_string(handle: HANDLE, class: i32) -> Option<String> {
 }
 
 /// 返回 (是否关闭了至少一个目标互斥体, 进程持有的 Mutant 名称样本)
-fn close_wechat_mutex(pid: u32) -> Result<(bool, Vec<String>), String> {
+/// 互斥体名按 profile 声明的片段宽松匹配
+fn close_wechat_mutex(
+    pid: u32,
+    mutex_marks: &[String],
+) -> Result<(bool, Vec<String>), String> {
     let target = unsafe { OpenProcess(PROCESS_DUP_HANDLE, 0, pid) };
     if target.is_null() {
         return Err(format!("无法打开微信进程（PID {pid}）"));
     }
-    let result = close_wechat_mutex_inner(target, pid);
+    let result = close_wechat_mutex_inner(target, pid, mutex_marks);
     unsafe { CloseHandle(target) };
     result
 }
 
 /// 返回 (是否关闭了至少一个目标互斥体, 进程持有的全部 Mutant 名称样本)
-fn close_wechat_mutex_inner(target: HANDLE, pid: u32) -> Result<(bool, Vec<String>), String> {
+fn close_wechat_mutex_inner(
+    target: HANDLE,
+    pid: u32,
+    mutex_marks: &[String],
+) -> Result<(bool, Vec<String>), String> {
     let me = unsafe { GetCurrentProcess() };
     let mut mutant_names: Vec<String> = Vec::new();
 
@@ -493,7 +494,7 @@ fn close_wechat_mutex_inner(target: HANDLE, pid: u32) -> Result<(bool, Vec<Strin
             }
             if type_str == "Mutant"
                 && obj_name.is_some_and(|n| {
-                    WECHAT_MUTEX_MARKS.iter().any(|mark| n.contains(mark))
+                    mutex_marks.iter().any(|mark| n.contains(mark))
                 })
             {
                 // 在源进程内关闭原句柄
@@ -520,8 +521,8 @@ fn close_wechat_mutex_inner(target: HANDLE, pid: u32) -> Result<(bool, Vec<Strin
 
 // ---------- 启动 / 激活 / 关闭 ----------
 
-/// 按镜像名快照当前存活的微信进程 pid 集合（EXE_NAMES 中的名字，小写比对）
-fn snapshot_wechat_pids() -> std::collections::HashSet<u32> {
+/// 按镜像名快照当前存活的微信进程 pid 集合（exe_names 中的名字，小写比对）
+fn snapshot_wechat_pids(exe_names: &[String]) -> std::collections::HashSet<u32> {
     let snap = unsafe { CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0) };
     let mut pids = std::collections::HashSet::new();
     if snap == INVALID_HANDLE_VALUE {
@@ -540,7 +541,7 @@ fn snapshot_wechat_pids() -> std::collections::HashSet<u32> {
                         .unwrap_or(entry.szExeFile.len())],
                 )
                 .to_ascii_lowercase();
-                if EXE_NAMES.iter().any(|e| e.eq_ignore_ascii_case(&name)) && entry.th32ProcessID != 0 {
+                if exe_names.iter().any(|e| e.eq_ignore_ascii_case(&name)) && entry.th32ProcessID != 0 {
                     pids.insert(entry.th32ProcessID);
                 }
                 if Process32NextW(snap, &mut entry) == 0 {
@@ -554,7 +555,12 @@ fn snapshot_wechat_pids() -> std::collections::HashSet<u32> {
 }
 
 /// 以挂起方式启动微信，恢复执行后轮询关闭单实例互斥体
-pub fn launch(path: &str) -> PlatformResult<()> {
+/// （exe 名与互斥体片段均来自 profile 声明）
+pub fn launch(
+    path: &str,
+    exe_names: &[String],
+    mutex_marks: &[String],
+) -> PlatformResult<()> {
     let exe_wide = to_wide(path);
     let mut cmdline = to_wide(&format!("\"{path}\""));
     let mut si: STARTUPINFOW = unsafe { std::mem::zeroed() };
@@ -590,14 +596,14 @@ pub fn launch(path: &str) -> PlatformResult<()> {
 
     // 微信可能在启动器模式下由首进程拉起真正的主进程后自行退出，
     // 因此按「镜像名 + 新出现 pid」监测全部微信进程，而不是只盯启动 pid。
-    let before = snapshot_wechat_pids();
+    let before = snapshot_wechat_pids(exe_names);
     let started = Instant::now();
     let deadline = started + Duration::from_secs(12);
     let mut last_names: Vec<String> = Vec::new();
     let mut last_err: Option<String> = None;
     while Instant::now() < deadline {
         // 当前存活的候选目标：新出现的微信进程 + 启动 pid（若仍存活且是微信同名进程）
-        let mut current = snapshot_wechat_pids();
+        let mut current = snapshot_wechat_pids(exe_names);
         let launched_alive = current.contains(&pid);
         current.retain(|p| !before.contains(p) || *p == pid);
         if current.is_empty() && !launched_alive {
@@ -614,7 +620,7 @@ pub fn launch(path: &str) -> PlatformResult<()> {
             new_pids
         };
         for tpid in &ordered {
-            match close_wechat_mutex(*tpid) {
+            match close_wechat_mutex(*tpid, mutex_marks) {
                 Ok((true, _)) => return Ok(()),
                 Ok((false, names)) => {
                     if !names.is_empty() {
@@ -635,7 +641,7 @@ pub fn launch(path: &str) -> PlatformResult<()> {
     }
     // 超时判定：任意新微信进程或启动进程仍存活即视为启动成功（互斥体可能
     // 已改名或该版本无需解除；多开冲突会在用户实际第二次启动时才暴露）
-    let alive_now = snapshot_wechat_pids();
+    let alive_now = snapshot_wechat_pids(exe_names);
     let any_alive = alive_now.iter().any(|p| !before.contains(p) || *p == pid);
     if any_alive {
         return Ok(());
@@ -824,20 +830,46 @@ pub fn terminate(pid: u32) -> PlatformResult<()> {
     Ok(())
 }
 
-// ---------- 副本操作（Windows 不适用） ----------
+// ---------- 副本操作（Windows mutex 模型不适用，走 EnginePlatform 实现的 NO_COPY） ----------
 
-pub fn generate_with_progress(_name: &str, _on_step: &dyn Fn(u32)) -> PlatformResult<()> {
-    Err(NO_COPY.into())
-}
+impl EnginePlatform for WindowsPlatform {
+    fn detect_app(&self) -> PlatformResult<WeChatInfo> {
+        detect(&self.detect)
+    }
 
-pub fn rename(_path: &str, _new_name: &str) -> PlatformResult<()> {
-    Err(NO_COPY.into())
-}
+    fn launch_targets(
+        &self,
+        main_alias: Option<&str>,
+        default_label: &str,
+    ) -> PlatformResult<Vec<LaunchTarget>> {
+        launch_targets(&self.detect, main_alias, default_label)
+    }
 
-pub fn delete(_path: &str) -> PlatformResult<()> {
-    Err(NO_COPY.into())
-}
+    fn launch(&self, path: &str) -> PlatformResult<()> {
+        launch(path, &self.detect.exe_names, &self.multi_instance.mutex_marks)
+    }
 
-pub fn rebuild(_path: &str) -> PlatformResult<()> {
-    Err(NO_COPY.into())
+    fn activate(&self, path: &str, pid: Option<u32>) -> PlatformResult<()> {
+        activate(path, pid)
+    }
+
+    fn terminate(&self, pid: u32) -> PlatformResult<()> {
+        terminate(pid)
+    }
+
+    fn generate_with_progress(&self, _name: &str, _on_step: &dyn Fn(u32)) -> PlatformResult<()> {
+        Err(NO_COPY.into())
+    }
+
+    fn rename(&self, _path: &str, _new_name: &str) -> PlatformResult<()> {
+        Err(NO_COPY.into())
+    }
+
+    fn delete(&self, _path: &str) -> PlatformResult<()> {
+        Err(NO_COPY.into())
+    }
+
+    fn rebuild(&self, _path: &str) -> PlatformResult<()> {
+        Err(NO_COPY.into())
+    }
 }
