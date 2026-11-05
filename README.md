@@ -135,8 +135,11 @@ pnpm tauri build  # 打包 dmg / msi
 |--------|------|
 | 语言 | 中文 / English，默认跟随系统 |
 | 主题 | 亮色 / 暗色 / 跟随系统 |
-| 检查更新 | 手动检查 GitHub 最新 Release |
-| GitHub | 项目主页直达入口 |
+| 检查更新 | 手动检查新版本（官网通道优先，GitHub 兜底），应用内一键更新 |
+| 官网 | 直达官网，按平台自动给出安装包 |
+| 支持作者 | 微信 / 支付宝收款码 |
+
+> GitHub 入口在侧边栏底部图标按钮。
 
 ## 🏗️ 技术架构
 
@@ -144,15 +147,21 @@ pnpm tauri build  # 打包 dmg / msi
 src-tauri/src/              # Rust 后端（Tauri 2）
 ├── commands.rs             # Tauri Command 层（全部 async + spawn_blocking）
 ├── config.rs               # 持久化配置（主程序备注名）
-├── platform/
-│   ├── mod.rs              # 平台抽象（LaunchTarget / provider 分发）
+├── lib.rs                  # 应用入口 / 窗口初始化
+├── walkthrough.rs          # 实机走查测试（真机依赖，不入 CI）
+├── platform/               # 多开引擎层（v1.2.0 起）
+│   ├── mod.rs              # 引擎 + profile + 平台策略 三层结构说明
+│   ├── engine.rs           # 内置应用参数（profile）+ 平台分派
+│   ├── profiles/           # 应用专属参数声明（App 名 / Bundle ID / 互斥体 / 注册表键）
 │   ├── macos.rs            # APFS 克隆 / Bundle ID / codesign 重签名
-│   ├── windows.rs          # 挂起启动 / 句柄枚举 / 互斥体关闭
-│   └── unsupported.rs      # 其他平台占位
+│   └── windows.rs          # 挂起启动 / 句柄枚举 / 互斥体关闭
 src/                        # 前端（Vue 3 + TypeScript）
 ├── views/                  # 实例管理 / 设置
 ├── stores/appStore.ts      # Pinia 状态（轮询 + 长操作封装）
+├── api.ts                  # IPC 封装（非 Tauri 环境回落 mock 数据）
+├── updater.ts              # 自动更新（官网 latest.json 优先，GitHub 兜底）
 ├── i18n.ts                 # 中英双语
+├── types.ts                # Rust↔TS 结构镜像（camelCase）
 └── style.css               # 双平台设计令牌（明暗主题 × mac/windows）
 ```
 
