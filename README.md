@@ -173,9 +173,23 @@ src/                        # 前端（Vue 3 + TypeScript）
 - [x] M4 Windows 互斥体多开模块
 - [x] M4.5 UI/UX 重构：双平台界面 + 中英双语 + 明暗主题 + 新版本提醒
 - [x] M5 v1.0.0 正式发布（tag 触发自动 Release）
-- [ ] M6 Homebrew / Scoop 分发、应用内自动更新
+- [x] M6 应用内自动更新（v1.1.0，官网通道优先 + 一键安装 + 失败降级官网下载）
+- [x] M7 多开引擎抽象 + 全部重建事务化（v1.2.0）
+- [ ] M8 Homebrew / Scoop 分发
 
 ## 📝 更新日志
+
+### v1.2.0 (2026-11-04)
+- 🏗️ 多开引擎抽象重构：macOS 副本模型 / Windows 互斥体模型统一到引擎层，为后续扩展铺路
+- 🔄 「全部重建」事务化：逐目标执行、单项失败不再中断整批，其余副本照常重建
+- 🔒 移除匿名安装统计，下载量以 GitHub Release 计数为准，保持零遥测
+- 📖 说明微信 4.1.7+ 同一设备同时登录上限 4 个账号为官方限制
+
+### v1.1.0 (2026-10-26)
+- 🚀 自动更新闭环：应用内一键下载安装并重启，失败自动降级官网下载
+- 🌐 Windows 安装器支持中英双语：NSIS 跟随系统语言，MSI 提供 zh-CN / en-US 两包
+- 📡 新版本检测收敛到官网通道（latest.json），构建注入更新签名
+- ✅ 多开能力与 1.0.x 一致，可直接覆盖升级
 
 ### v1.0.2 (2026-10-22)
 - 🐛 修复：检查更新在网络异常时可能一直转圈，或断网时误报「已是最新」
@@ -247,6 +261,11 @@ src/                        # 前端（Vue 3 + TypeScript）
 <p align="center">
   <sub>微信扫一扫 · 支付宝扫一扫 &nbsp;|&nbsp; Enjoying vx-m-open? Buy the author a coffee ☕</sub>
 </p>
+
+## 🏪 作者的其他项目
+
+- **[汤悦云管家 (JoySpring)](https://www.cting.vip)** — 足疗/洗浴行业垂直 SaaS 门店管理系统：会员、收银、排钟、营销、多门店，支持在线体验。
+- **Other projects by the author:** [JoySpring](https://www.cting.vip) — vertical SaaS for foot-spa & bath stores.
 
 ## 📄 许可证
 
