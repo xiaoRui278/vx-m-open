@@ -279,6 +279,11 @@ src/                        # 前端（Vue 3 + TypeScript）
 
 MIT License © [xiaoRui278](https://github.com/xiaoRui278)
 
+## 📚 文档
+
+- [更新日志](CHANGELOG.md) · [免责声明](DISCLAIMER.md)
+- [安全政策](SECURITY.md) · [贡献指南](CONTRIBUTING.md) · [设计系统](design.md)
+
 ---
 
 <p align="center">
