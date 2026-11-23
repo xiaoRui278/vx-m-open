@@ -592,6 +592,22 @@ button:disabled { cursor: not-allowed; }
 
 .warn-strip .btn { margin-left: auto; height: 26px; font-size: 12px; }
 
+/* ============ 远程兼容清单横幅（v1.3）：degraded=warn 色，broken/disabled=danger 色 ============ */
+.notice-strip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: none;
+  border-radius: var(--radius-ctl);
+  padding: 9px 14px;
+  margin-bottom: 14px;
+  font-size: 12.5px;
+}
+
+.notice-strip[data-kind="warn"] { background: var(--warn-weak); color: var(--warn-text); }
+.notice-strip[data-kind="danger"] { background: var(--err-weak); color: var(--err); }
+.notice-strip svg { width: 15px; height: 15px; flex: none; }
+
 /* ============ 实例卡片 ============ */
 .section-label {
   font-size: 12px;

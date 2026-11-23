@@ -157,7 +157,7 @@ src-tauri/src/              # Rust 后端（Tauri 2）
 │   └── windows.rs          # 挂起启动 / 句柄枚举 / 互斥体关闭
 src/                        # 前端（Vue 3 + TypeScript）
 ├── views/                  # 实例管理 / 设置
-├── stores/appStore.ts      # Pinia 状态（轮询 + 长操作封装）
+├── stores/appStore.ts      # Pinia 状态（轮询 + 长操作封装 + 远程兼容清单）
 ├── api.ts                  # IPC 封装（非 Tauri 环境回落 mock 数据）
 ├── updater.ts              # 自动更新（官网 latest.json 优先，GitHub 兜底）
 ├── i18n.ts                 # 中英双语
@@ -184,12 +184,13 @@ src/                        # 前端（Vue 3 + TypeScript）
 - [x] M5 v1.0.0 正式发布（tag 触发自动 Release）
 - [x] M6 应用内自动更新（v1.1.0，官网通道优先 + 一键安装 + 失败降级官网下载）
 - [x] M7 多开引擎抽象 + 全部重建事务化（v1.2.0）
+- [x] M8 远程兼容清单：微信兼容性远程降级，无需发版即时生效（v1.3.0）
 
 ## 📝 更新日志
 
 完整版本历史见 **[CHANGELOG.md](CHANGELOG.md)**，各版本安装包见 **[Releases](https://github.com/xiaoRui278/vx-m-open/releases)**。
 
-> **最新版 [v1.2.0](https://github.com/xiaoRui278/vx-m-open/releases/tag/v1.2.0)（2026-11-04）** —— 多开引擎抽象重构，「全部重建」事务化，稳定性大幅提升。
+> **最新版 [v1.3.0](https://github.com/xiaoRui278/vx-m-open/releases/tag/v1.3.0)（2026-11-23）** —— 新增远程兼容清单：微信机制出问题时自动降级提示，无需等待发版；离线/断网完全不受影响。
 
 ## 边界声明
 

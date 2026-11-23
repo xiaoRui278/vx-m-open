@@ -30,3 +30,18 @@ export interface InstanceRemark {
   startedAt: number;
   remark: string;
 }
+
+/** 远程兼容清单中单个 profile 的状态（v1.3，与 manifest 字段对齐） */
+export type RemoteProfileStatusLevel = "ok" | "degraded" | "broken" | "disabled";
+
+/** 远程兼容清单 message 字段（中英双语，与后端 LocalizedText 同构） */
+export interface RemoteLocalizedMessage {
+  zh: string;
+  en: string;
+}
+
+/** 归一化后的 profile 远程状态；无清单/解析失败/条目不适用 = ok */
+export interface RemoteProfileStatus {
+  status: RemoteProfileStatusLevel;
+  message: RemoteLocalizedMessage | null;
+}

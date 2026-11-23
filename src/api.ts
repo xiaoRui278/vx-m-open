@@ -2,7 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import type { InstanceRemark, LaunchTarget, WeChatInfo } from "./types";
 
 /* —— 浏览器预览夹具（pnpm dev 用普通浏览器直接查看 UI；Tauri 内零影响）—— */
-const inTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+export const inTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
 const MOCK_NOW = Math.floor(Date.now() / 1000);
 

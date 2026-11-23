@@ -1,6 +1,6 @@
 [package]
 name = "vx-m-open"
-version = "1.2.0"
+version = "1.3.0"
 description = "Cross-platform WeChat multi-instance launcher"
 license = "MIT"
 repository = "https://github.com/xiaoRui278/vx-m-open"

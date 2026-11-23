@@ -3,14 +3,23 @@ import { getVersion } from "@tauri-apps/api/app";
 import * as api from "../api";
 import { installUpdate, updaterAvailable } from "../updater";
 import { t } from "../i18n";
-import type { InstanceRemark, LaunchTarget, WeChatInfo } from "../types";
+import type { InstanceRemark, LaunchTarget, RemoteProfileStatus, WeChatInfo } from "../types";
+import { inTauri } from "../api";
 
 let pollTimer: ReturnType<typeof setInterval> | null = null;
+let manifestTimer: ReturnType<typeof setInterval> | null = null;
 let visBound = false;
 
 export const GITHUB_URL = "https://github.com/xiaoRui278/vx-m-open";
 export const SITE_URL = "https://vxmo.cting.vip";
 const CHECK_TIMEOUT_MS = 5000;
+const MANIFEST_URL = `${SITE_URL}/profiles/manifest.json`;
+/** 远程兼容清单刷新周期（启动后一次 + 每 10 分钟 + 回前台） */
+const MANIFEST_INTERVAL_MS = 10 * 60 * 1000;
+const MANIFEST_STATUSES = ["ok", "degraded", "broken", "disabled"];
+
+/** 会话内最近一次成功拉取的清单（拉取失败时静默回退；不持久化，冷启动 = 全 ok） */
+let lastGoodProfileStatus: Record<string, RemoteProfileStatus> | null = null;
 
 export const useAppStore = defineStore("app", {
   state: () => ({
@@ -27,7 +36,14 @@ export const useAppStore = defineStore("app", {
     updateVersion: "",
     updateNotes: "",
     updateViaUpdater: false,
+    profileStatus: {} as Record<string, RemoteProfileStatus>,
   }),
+  getters: {
+    /** 微信的远程兼容状态；无清单/解析失败/条目不适用 = ok（与 v1.2 行为一致） */
+    wechatStatus(state): RemoteProfileStatus {
+      return state.profileStatus["wechat"] ?? { status: "ok", message: null };
+    },
+  },
   actions: {
     async refreshAll() {
       try {
@@ -154,24 +170,105 @@ export const useAppStore = defineStore("app", {
         this.busyText = "";
       }
     },
+    /** 拉取远程兼容清单（Spec：2026-11-23-v1.3-remote-manifest-spec.md F2/F3）。
+     *  全程静默：失败回退最近一次成功数据，从未成功则全 ok；不 toast 不报错 */
+    async refreshManifest() {
+      // minAppVersion 需要与客户端版本比较；getVersion 是本地 IPC，失败则按 0.0.0（条目整体跳过，保守方向）
+      if (!this.appVersion) {
+        try {
+          this.appVersion = await getVersion();
+        } catch {
+          /* 保持空 */
+        }
+      }
+      const parsed = await fetchManifest(this.appVersion || "0.0.0");
+      if (parsed) {
+        lastGoodProfileStatus = parsed;
+        this.profileStatus = { ...parsed };
+      } else {
+        this.profileStatus = lastGoodProfileStatus ? { ...lastGoodProfileStatus } : {};
+      }
+    },
     init() {
       void this.refreshAll();
       void this.initVersion();
+      void this.refreshManifest();
       if (pollTimer) clearInterval(pollTimer);
       pollTimer = setInterval(() => {
         // 窗口不可见时暂停轮询（Tauri 最小化/完全遮挡时 webview 不可见；部分环境可能始终 visible，仅优化失效无副作用）
         if (document.visibilityState !== "visible") return;
         if (!this.busy) void this.refreshAll();
       }, 3000);
+      if (manifestTimer) clearInterval(manifestTimer);
+      manifestTimer = setInterval(() => {
+        if (document.visibilityState !== "visible") return;
+        void this.refreshManifest();
+      }, MANIFEST_INTERVAL_MS);
       if (!visBound) {
         visBound = true;
         document.addEventListener("visibilitychange", () => {
-          if (document.visibilityState === "visible") void this.refreshAll();
+          if (document.visibilityState === "visible") {
+            void this.refreshAll();
+            void this.refreshManifest();
+          }
         });
       }
     },
   },
 });
+
+/** 拉取远程兼容清单；失败返回 null（走回退链）。浏览器预览模式用 localStorage 模拟（键 vxmoMockManifest，值为 manifest JSON 文本；未设置视为拉取失败） */
+async function fetchManifest(appVersion: string): Promise<Record<string, RemoteProfileStatus> | null> {
+  let raw: unknown;
+  if (!inTauri) {
+    const mock = localStorage.getItem("vxmoMockManifest");
+    if (!mock) return null;
+    try {
+      raw = JSON.parse(mock);
+    } catch {
+      return null;
+    }
+  } else {
+    try {
+      raw = await fetchJsonWithTimeout(MANIFEST_URL, { cache: "no-store" }, CHECK_TIMEOUT_MS);
+    } catch {
+      /* 官网超时 / 404 / 响应异常：静默走回退 */
+      return null;
+    }
+  }
+  return parseManifest(raw, appVersion);
+}
+
+/** 清单解析与校验：未知 schemaVersion 整体跳过；未知 status 视为 ok（宁可多给操作不可误锁）；
+ *  minAppVersion 高于当前客户端版本 → 整条跳过（回退内置快照）；message 仅接受中英双字符串 */
+function parseManifest(raw: unknown, appVersion: string): Record<string, RemoteProfileStatus> | null {
+  if (typeof raw !== "object" || raw === null) return null;
+  const obj = raw as Record<string, unknown>;
+  if (obj.schemaVersion !== 1) return null;
+  if (typeof obj.profiles !== "object" || obj.profiles === null) return null;
+  const out: Record<string, RemoteProfileStatus> = {};
+  for (const [id, entry] of Object.entries(obj.profiles as Record<string, unknown>)) {
+    if (typeof entry !== "object" || entry === null) continue;
+    const e = entry as Record<string, unknown>;
+    const minApp = typeof e.minAppVersion === "string" ? e.minAppVersion.trim() : "";
+    if (minApp && isNewer(minApp, appVersion)) continue;
+    const status = MANIFEST_STATUSES.includes(e.status as string)
+      ? (e.status as RemoteProfileStatus["status"])
+      : "ok";
+    let message: RemoteProfileStatus["message"] = null;
+    if (
+      typeof e.message === "object" &&
+      e.message !== null &&
+      typeof (e.message as Record<string, unknown>).zh === "string" &&
+      typeof (e.message as Record<string, unknown>).en === "string"
+    ) {
+      const m = e.message as Record<string, string>;
+      message = { zh: m.zh, en: m.en };
+    }
+    out[id] = { status, message };
+  }
+  return out;
+}
 
 /** fetch JSON + 超时中断（含响应体读取；AbortSignal.timeout 在 macOS 11 的 WKWebView 不可用，手动实现） */
 async function fetchJsonWithTimeout(url: string, init: RequestInit, ms: number): Promise<unknown> {

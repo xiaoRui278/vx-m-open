@@ -8,9 +8,20 @@
 
 ## [未发布 / Unreleased]
 
+---
+
+## [1.3.0] - 2026-11-23
+
 ### Added
+- **远程兼容清单**：客户端定期从官网拉取 `profiles/manifest.json`，微信多开机制出问题时无需发版即可远程降级
+- 三档远程状态：`degraded`（警示横幅 + 功能可用）/ `broken`（暂停新建实例，已有实例不受影响）/ `disabled`（隐藏操作入口，运行中的实例仍可激活和关闭）
+- `minAppVersion` 支持：旧客户端自动跳过不兼容的清单条目
+- 离线与弱网兜底：拉取失败静默回退内置状态，断网行为与 v1.2 完全一致，全程零打扰
 - 补充 `LICENSE`（MIT），`package.json` / `Cargo.toml` 增加 license 与 repository 字段
 - 新增 `SECURITY.md` 安全政策与 `CONTRIBUTING.md` 贡献指南
+
+### Changed
+- 设置页版本行在满足一键更新条件时提供「立即更新」按钮，「前往下载」降级为兜底（与更新横幅行为对齐）
 
 ---
 
@@ -102,7 +113,8 @@
 >
 > ⚠️ 微信版本更新可能使多开机制失效，本工具会尽力跟进适配，但不作任何保证。详见 [DISCLAIMER.md](DISCLAIMER.md)。
 
-[未发布 / Unreleased]: https://github.com/xiaoRui278/vx-m-open/compare/v1.2.0...HEAD
+[未发布 / Unreleased]: https://github.com/xiaoRui278/vx-m-open/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/xiaoRui278/vx-m-open/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/xiaoRui278/vx-m-open/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/xiaoRui278/vx-m-open/compare/v1.0.2...v1.1.0
 [1.0.2]: https://github.com/xiaoRui278/vx-m-open/compare/v1.0.1...v1.0.2

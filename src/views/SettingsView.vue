@@ -34,6 +34,18 @@ async function checkUpdate() {
   checking.value = false;
 }
 
+// 一键更新（updater 可用时提供；失败后 store.updateViaUpdater 置 false，自动降级为仅「前往下载」）
+const updating = ref(false);
+
+async function updateNow() {
+  updating.value = true;
+  try {
+    await store.updateNow();
+  } finally {
+    updating.value = false;
+  }
+}
+
 function openSite() {
   void openUrl(SITE_URL);
 }
@@ -103,6 +115,10 @@ const versionText = computed(() => {
           <template v-if="checking"><span class="spinner" style="display: inline-block; vertical-align: -2px; margin-left: 8px"></span> {{ t("checking") }}</template>
           <template v-else-if="store.updateAvailable">
             <span style="margin-left: 8px">{{ t("updateAvailable", { version: store.updateVersion }) }}</span>
+            <button v-if="store.updateViaUpdater" class="btn sm" style="margin-left: 8px" :disabled="updating || store.busy" @click="updateNow">
+              <span v-if="updating" class="spinner" style="display: inline-block; vertical-align: -2px"></span>
+              {{ t("updateInstallNow") }}
+            </button>
             <button class="btn sm" style="margin-left: 8px" @click="openSite">{{ t("updateDownload") }}</button>
           </template>
           <template v-else-if="checkResult === 'ok'"><span style="margin-left: 8px">{{ t("upToDate") }}</span></template>

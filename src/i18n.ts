@@ -158,6 +158,12 @@ const messages = {
     updateDownloadingUnknown: "正在下载更新…",
     updateInstalling: "正在安装更新，应用即将重启",
 
+    // 远程兼容清单（v1.3）：manifest 未带 message 时的兜底文案
+    remoteDegraded: "微信兼容性降级：当前版本可能存在已知问题，功能仍可使用",
+    remoteBroken: "当前微信版本与多开机制不兼容，已暂停新建实例，已有实例不受影响",
+    remoteDisabled: "微信多开暂时不可用，操作入口已隐藏；已运行实例仍可激活和关闭",
+    manifestSource: "来源：远程兼容清单",
+
     // Toast / 状态（仅异步长任务完成与错误；可见结果静默——见 design.md）
     copyCreated: "副本「{name}」创建成功",
     rebuilt: "副本已重建为新版本，账号无需重新登录",
@@ -290,6 +296,12 @@ const messages = {
     updateDownloading: "Downloading update… {percent}%",
     updateDownloadingUnknown: "Downloading update…",
     updateInstalling: "Installing update, restarting soon",
+
+    // Remote compatibility manifest (v1.3): fallback copy when manifest has no message
+    remoteDegraded: "WeChat compatibility degraded: known issues on this version, features remain usable",
+    remoteBroken: "This WeChat version is incompatible with the multi-instance mechanism. Creating new instances is paused; existing ones are unaffected",
+    remoteDisabled: "Multi-instance is temporarily unavailable; actions are hidden. Running instances can still be activated or closed",
+    manifestSource: "Source: remote compatibility manifest",
 
     copyCreated: "Copy \"{name}\" created",
     rebuilt: "Copy rebuilt to the new version, no re-login needed",

@@ -4,7 +4,7 @@ import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { useAppStore } from "../stores/appStore";
 import * as api from "../api";
 import { icons } from "../icons";
-import { t } from "../i18n";
+import { locale, t } from "../i18n";
 import type { LaunchTarget } from "../types";
 import logo from "../assets/logo.png";
 
@@ -14,6 +14,22 @@ const store = useAppStore();
 
 // 平台分支：Windows 走"本体多开"模型（无副本操作），macOS 走副本模型
 const isWindows = sharedIsWindows;
+
+// ================= 远程兼容清单门控（Spec：2026-11-23-v1.3-remote-manifest-spec.md F1/F3） =================
+// broken/disabled 禁新建；disabled 禁全部常规操作但保留已运行实例的激活/关闭
+const remoteStatus = computed(() => store.wechatStatus);
+const createBlocked = computed(() => ["broken", "disabled"].includes(remoteStatus.value.status));
+const opsBlocked = computed(() => remoteStatus.value.status === "disabled");
+const remoteBannerKind = computed(() => (remoteStatus.value.status === "degraded" ? "warn" : "danger"));
+const remoteBannerText = computed(() => {
+  const s = remoteStatus.value;
+  if (s.status === "ok") return "";
+  const msg = s.message?.[locale.value];
+  return (
+    msg ||
+    t(s.status === "degraded" ? "remoteDegraded" : s.status === "broken" ? "remoteBroken" : "remoteDisabled")
+  );
+});
 
 // ================= 弹框（创建 / 改名 / 删除 / 重建确认） =================
 const showModal = ref(false);
@@ -379,7 +395,7 @@ const anyDialogOpen = computed(
       <h1 class="page-title">{{ t("instancesTitle") }}</h1>
       <p class="page-sub">{{ isWindows ? t("instancesSubWin") : t("instancesSubMac") }}</p>
     </div>
-    <button v-if="!isWindows" class="btn primary lg" :disabled="store.busy || anyDialogOpen" @click="openCreate">
+    <button v-if="!isWindows && !createBlocked" class="btn primary lg" :disabled="store.busy || anyDialogOpen" @click="openCreate">
       <span aria-hidden="true" v-html="icons.plus"></span>
       {{ t("createCopy") }}
     </button>
@@ -406,11 +422,17 @@ const anyDialogOpen = computed(
       </div>
     </div>
 
-    <!-- 版本落后警示（macOS 副本模型） -->
+    <!-- 远程兼容清单横幅（degraded=警示色；broken/disabled=危险色） -->
+    <div v-if="remoteBannerText" class="notice-strip" :data-kind="remoteBannerKind">
+      <span aria-hidden="true" v-html="icons.warn"></span>
+      <span class="head-fill">{{ remoteBannerText }}</span>
+    </div>
+
+    <!-- 版本落后警示（macOS 副本模型）；disabled 时重建入口一并隐藏 -->
     <div v-if="!isWindows && outdatedCount" class="warn-strip">
       <span aria-hidden="true" v-html="icons.warn"></span>
       <span class="head-fill">{{ t("outdatedWarning", { n: outdatedCount }) }}</span>
-      <button class="btn" :disabled="store.busy || anyDialogOpen" @click="openRebuildAll">
+      <button v-if="!opsBlocked" class="btn" :disabled="store.busy || anyDialogOpen" @click="openRebuildAll">
         {{ t("rebuildAll") }}
       </button>
     </div>
@@ -449,7 +471,7 @@ const anyDialogOpen = computed(
           </div>
           <div class="actions">
             <template v-if="!x.running">
-              <button class="btn primary sm" :disabled="store.busy || anyDialogOpen" @click="store.launch(x.path)">
+              <button v-if="!opsBlocked" class="btn primary sm" :disabled="store.busy || anyDialogOpen" @click="store.launch(x.path)">
                 <span aria-hidden="true" v-html="icons.play"></span>{{ t("launch") }}
               </button>
             </template>
@@ -462,18 +484,18 @@ const anyDialogOpen = computed(
               </button>
             </template>
             <template v-if="!x.isMain">
-              <button v-if="x.outdated" class="btn sm" :disabled="store.busy || anyDialogOpen" @click="openConfirm('rebuild', x)">
+              <button v-if="x.outdated && !opsBlocked" class="btn sm" :disabled="store.busy || anyDialogOpen" @click="openConfirm('rebuild', x)">
                 <span aria-hidden="true" v-html="icons.refresh"></span>{{ t("rebuild") }}
               </button>
-              <button class="btn sm" :disabled="store.busy || anyDialogOpen" @click="openRename(x)">
+              <button v-if="!opsBlocked" class="btn sm" :disabled="store.busy || anyDialogOpen" @click="openRename(x)">
                 <span aria-hidden="true" v-html="icons.pencil"></span>{{ t("rename") }}
               </button>
-              <button class="btn danger sm" :disabled="store.busy || anyDialogOpen" @click="openConfirm('delete', x)">
+              <button v-if="!opsBlocked" class="btn danger sm" :disabled="store.busy || anyDialogOpen" @click="openConfirm('delete', x)">
                 <span aria-hidden="true" v-html="icons.trash"></span>{{ t("remove") }}
               </button>
             </template>
             <template v-else>
-              <button class="btn sm" :disabled="store.busy || anyDialogOpen" @click="openRename(x)">
+              <button v-if="!opsBlocked" class="btn sm" :disabled="store.busy || anyDialogOpen" @click="openRename(x)">
                 <span aria-hidden="true" v-html="icons.pencil"></span>{{ t("remark") }}
               </button>
             </template>
@@ -484,7 +506,7 @@ const anyDialogOpen = computed(
         <img class="empty-logo" :src="logo" alt="">
         <div class="empty-title">{{ t("emptyTitle") }}</div>
         <p class="empty-sub">{{ t("emptySub") }}</p>
-        <button class="btn primary" :disabled="store.busy || anyDialogOpen" @click="openCreate">
+        <button v-if="!createBlocked" class="btn primary" :disabled="store.busy || anyDialogOpen" @click="openCreate">
           {{ t("createCopy") }}
         </button>
       </div>
@@ -508,7 +530,7 @@ const anyDialogOpen = computed(
           </div>
         </div>
         <div class="actions">
-          <button class="btn primary lg" :disabled="store.busy || anyDialogOpen" @click="openLaunchNew">
+          <button v-if="!createBlocked" class="btn primary lg" :disabled="store.busy || anyDialogOpen" @click="openLaunchNew">
             <span v-if="store.busy" class="spinner"></span>
             <span v-else aria-hidden="true" v-html="icons.play"></span>
             {{ store.busy ? t("launching") : t("launchNew") }}
@@ -531,7 +553,7 @@ const anyDialogOpen = computed(
             </div>
           </div>
           <div class="actions">
-            <button class="btn sm" :disabled="store.busy || anyDialogOpen" @click="openInstanceRemark(x)">
+            <button v-if="!opsBlocked" class="btn sm" :disabled="store.busy || anyDialogOpen" @click="openInstanceRemark(x)">
               <span aria-hidden="true" v-html="icons.pencil"></span>{{ t("remark") }}
             </button>
             <button class="btn sm" :disabled="store.busy || anyDialogOpen" @click="store.activate(x.path, x.pid)">
@@ -547,7 +569,7 @@ const anyDialogOpen = computed(
         <img class="empty-logo" :src="logo" alt="">
         <div class="empty-title">{{ t("winEmptyTitle") }}</div>
         <p class="empty-sub">{{ t("winEmptySub") }}</p>
-        <button class="btn primary" :disabled="store.busy || anyDialogOpen" @click="openLaunchNew">
+        <button v-if="!createBlocked" class="btn primary" :disabled="store.busy || anyDialogOpen" @click="openLaunchNew">
           {{ t("launchNew") }}
         </button>
       </div>
